@@ -14,13 +14,15 @@ on:
         default: 'deploy'
         type: choice
         options:
+          - build
           - deploy
+          - swarm-deploy
           - restart
           - rollback
 
 jobs:
   build:
-    if: ${{ github.event.inputs.command == 'deploy' }} # ← 仅在 deploy 时构建
+    if: ${{ github.event.inputs.command == 'deploy' }} || ${{ github.event.inputs.command == 'build' }} || ${{ github.event.inputs.command == 'swarm-deploy' }}
     runs-on: ubuntu-latest
     env:
       DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
@@ -74,3 +76,16 @@ jobs:
           docker stop ceramicraft-commodity-mservice || true
           docker rm ceramicraft-commodity-mservice || true
           docker run -d --name ceramicraft-commodity-mservice --network ceramicraft-network -v /home/ubuntu/logs:/app/logs -e MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }} -e JWT_SECRET=${{ secrets.JWT_SECRET }} "${DOCKER_HUB_USERNAME}/ceramicraft-commodity-mservice:${{ github.event.inputs.version }}"
+  swarm-deploy:
+    if: ${{ github.event.inputs.command == 'swarm-deploy' }}
+    runs-on: self-hosted
+    needs: build
+    env:
+      DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
+    steps:
+      - name: pull the docker image
+        run: |
+          docker pull "${DOCKER_HUB_USERNAME}/ceramicraft-commodity-mservice:${{ github.event.inputs.version }}"
+      - name: update the service
+        run: |
+          docker service update --force --image "${DOCKER_HUB_USERNAME}/ceramicraft-commodity-mservice:${{ github.event.inputs.version }}" ms-stack_product-ms || true
