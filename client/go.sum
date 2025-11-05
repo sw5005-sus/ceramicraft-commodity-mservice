@@ -1,7 +1,3 @@
-github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/common v0.0.0-20251002132653-38cf21ba5cbd h1:ErSPnkAqy//9oqxz7zFzCcX1u0nKHjgbWFgEJyaKbyc=
-github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/common v0.0.0-20251002132653-38cf21ba5cbd/go.mod h1:M6wcVOK64wlV9q8wMYC7EuIck4DyoH/HToxkG7+GY6A=
-github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/common v0.0.0-20251004105203-47821bbeb698 h1:jb+F8YtYsTpWNdCg8yum7990imo51hWCb6pQJseANX0=
-github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/common v0.0.0-20251004105203-47821bbeb698/go.mod h1:M6wcVOK64wlV9q8wMYC7EuIck4DyoH/HToxkG7+GY6A=
 github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/common v0.0.0-20251005054455-2b51b4350ad5 h1:e3W8S3DHaNp5wWBRLB1zI1yXMb4WbcHlamwDbC1beCY=
 github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/common v0.0.0-20251005054455-2b51b4350ad5/go.mod h1:M6wcVOK64wlV9q8wMYC7EuIck4DyoH/HToxkG7+GY6A=
 github.com/go-logr/logr v1.4.3 h1:CjnDlHq8ikf6E492q6eKboGOC0T8CDaOvkHCIg8idEI=
