@@ -5,14 +5,14 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/server/config"
-	"github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/server/grpc"
-	"github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/server/http"
-	"github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/server/log"
-	"github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/server/metrics"
-	"github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/server/mq"
-	"github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/server/repository"
-	"github.com/NUS-ISS-Agile-Team/ceramicraft-user-mservice/common/utils"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/config"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/grpc"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/http"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/log"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/metrics"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/mq"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/repository"
+	"github.com/sw5005-sus/ceramicraft-user-mservice/common/utils"
 )
 
 var sigCh = make(chan os.Signal, 1)

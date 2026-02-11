@@ -8,8 +8,8 @@ import (
 	context "context"
 	reflect "reflect"
 
-	dao "github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/server/repository/dao"
-	model "github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/server/repository/model"
+	dao "github.com/sw5005-sus/ceramicraft-commodity-mservice/server/repository/dao"
+	model "github.com/sw5005-sus/ceramicraft-commodity-mservice/server/repository/model"
 	gomock "github.com/golang/mock/gomock"
 )
 

@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/server/log"
-	"github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/server/repository/dao"
-	"github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/server/repository/model"
-	"github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/server/types"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/log"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/repository/dao"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/repository/model"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/types"
 )
 
 type ProductService interface {

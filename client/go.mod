@@ -1,9 +1,9 @@
-module github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/client
+module github.com/sw5005-sus/ceramicraft-commodity-mservice/client
 
 go 1.24.9
 
 require (
-	github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/common v0.0.0-20251005054455-2b51b4350ad5
+	github.com/sw5005-sus/ceramicraft-commodity-mservice/common v0.0.1
 	google.golang.org/grpc v1.75.1
 )
 

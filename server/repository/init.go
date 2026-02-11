@@ -3,8 +3,8 @@ package repository
 import (
 	"fmt"
 
-	"github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/server/config"
-	"github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/server/repository/model"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/config"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/repository/model"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )

@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/server/config"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )

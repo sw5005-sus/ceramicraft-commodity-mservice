@@ -3,8 +3,8 @@ package grpc
 import (
 	"context"
 
-	"github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/common/productpb"
-	"github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/server/service"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/common/productpb"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/service"
 )
 
 type ProductService struct {

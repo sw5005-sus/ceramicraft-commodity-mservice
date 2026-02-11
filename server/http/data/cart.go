@@ -1,6 +1,6 @@
 package data
 
-import "github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/server/types"
+import "github.com/sw5005-sus/ceramicraft-commodity-mservice/server/types"
 
 type CartItemBasicVO struct {
 	ID        int  `json:"id"`

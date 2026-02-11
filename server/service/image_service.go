@@ -6,10 +6,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/server/config"
-	"github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/server/http/data"
-	"github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/server/log"
-	"github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/server/proxy"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/config"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/http/data"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/log"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/proxy"
 )
 
 type ImageService interface {
