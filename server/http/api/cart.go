@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/server/http/data"
-	"github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/server/log"
-	"github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/server/service"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/http/data"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/log"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/service"
 	"github.com/gin-gonic/gin"
 )
 

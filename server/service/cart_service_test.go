@@ -6,9 +6,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/server/http/data"
-	"github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/server/repository/dao/mocks"
-	"github.com/NUS-ISS-Agile-Team/ceramicraft-commodity-mservice/server/repository/model"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/http/data"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/repository/dao/mocks"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/repository/model"
 	"github.com/golang/mock/gomock"
 	"gorm.io/gorm"
 )
