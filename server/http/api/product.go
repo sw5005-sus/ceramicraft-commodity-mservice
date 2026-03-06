@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gin-gonic/gin"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/http/data"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/log"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/service"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/types"
-	"github.com/gin-gonic/gin"
 )
 
 // AddProduct godoc
@@ -175,6 +175,11 @@ func UpdateProductStock(c *gin.Context) {
 // @Failure 500 {object} data.BaseResponse
 // @Router /customer/products [get]
 func GetCustomerProductList(c *gin.Context) {
+	// Log all headers
+	headers := c.Request.Header
+	for key, values := range headers {
+		log.Logger.Infof("Header: %s = %v", key, values)
+	}
 	var req types.GetProductListRequest
 
 	// 获取查询参数
