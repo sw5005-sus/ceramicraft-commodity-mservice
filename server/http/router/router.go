@@ -13,7 +13,9 @@ import (
 )
 
 const (
-	servicePrefix = "/product-ms/v1"
+	servicePrefix      = "/product-ms/v1"
+	roleProductEditor  = "product_editor"
+	roleProductAuditor = "product_auditor"
 )
 
 func NewRouter() *gin.Engine {
@@ -37,9 +39,9 @@ func NewRouter() *gin.Engine {
 		merchantRouter := baseRouter.Group("/merchant")
 		{
 			merchantRouter.Use(middleware.AuthMiddleware())
-			merchantRouter.POST("/products", api.AddProduct)
-			merchantRouter.GET("/product/:id", api.GetProductMerchant)
-			merchantRouter.PATCH("/products/:id/status", api.UpdateProductStatus)
+			merchantRouter.POST("/products", middleware.RequireRoles("product_editor"), api.AddProduct)
+			merchantRouter.GET("/product/:id", middleware.RequireRoles("product_editor", "product_auditor"), api.GetProductMerchant)
+			merchantRouter.PATCH("/products/:id/status", middleware.RequireRoles("product_editor"), api.UpdateProductStatus)
 			merchantRouter.PATCH("/products/:id/stock", api.UpdateProductStock)
 			merchantRouter.POST("/images/upload-urls", api.GetImageUploadPresignURL)
 			merchantRouter.GET("/products", api.GetMerchantProductList)

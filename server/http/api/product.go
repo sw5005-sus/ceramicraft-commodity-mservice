@@ -175,11 +175,6 @@ func UpdateProductStock(c *gin.Context) {
 // @Failure 500 {object} data.BaseResponse
 // @Router /customer/products [get]
 func GetCustomerProductList(c *gin.Context) {
-	// Log all headers
-	headers := c.Request.Header
-	for key, values := range headers {
-		log.Logger.Infof("Header: %s = %v", key, values)
-	}
 	var req types.GetProductListRequest
 
 	// 获取查询参数
