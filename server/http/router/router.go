@@ -6,6 +6,7 @@ import (
 
 	_ "github.com/sw5005-sus/ceramicraft-commodity-mservice/server/docs"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/http/api"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/log"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/metrics"
 	"github.com/sw5005-sus/ceramicraft-user-mservice/common/middleware"
 	swaggerFiles "github.com/swaggo/files"
@@ -35,17 +36,22 @@ func NewRouter() *gin.Engine {
 				"message": "pong",
 			})
 		})
-
+		baseRouter.Use(func(c *gin.Context) {
+			for key, value := range c.Request.Header {
+				log.Logger.Infof("%s: %s", key, value)
+			}
+			c.Next()
+		})
 		merchantRouter := baseRouter.Group("/merchant")
 		{
 			merchantRouter.Use(middleware.AuthMiddleware())
-			merchantRouter.POST("/products", middleware.RequireRoles("product_editor"), api.AddProduct)
-			merchantRouter.GET("/product/:id", middleware.RequireRoles("product_editor", "product_auditor"), api.GetProductMerchant)
-			merchantRouter.PATCH("/products/:id/status", middleware.RequireRoles("product_editor"), api.UpdateProductStatus)
-			merchantRouter.PATCH("/products/:id/stock", api.UpdateProductStock)
+			merchantRouter.POST("/products", middleware.RequireRoles(roleProductEditor), api.AddProduct)
+			merchantRouter.GET("/product/:id", middleware.RequireRoles(roleProductEditor, roleProductAuditor), api.GetProductMerchant)
+			merchantRouter.PATCH("/products/:id/status", middleware.RequireRoles(roleProductAuditor), api.UpdateProductStatus)
+			merchantRouter.PATCH("/products/:id/stock", middleware.RequireRoles(roleProductEditor), api.UpdateProductStock)
 			merchantRouter.POST("/images/upload-urls", api.GetImageUploadPresignURL)
 			merchantRouter.GET("/products", api.GetMerchantProductList)
-			merchantRouter.PUT("/products/:id", api.EditProductInfo)
+			merchantRouter.PUT("/products/:id", middleware.RequireRoles(roleProductEditor), api.EditProductInfo)
 		}
 
 		customerRouter := baseRouter.Group("/customer")
