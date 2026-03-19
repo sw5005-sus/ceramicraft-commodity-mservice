@@ -37,13 +37,13 @@ func NewRouter() *gin.Engine {
 		merchantRouter := baseRouter.Group("/merchant")
 		{
 			merchantRouter.Use(middleware.AuthMiddleware())
-			merchantRouter.POST("/products", api.AddProduct, middleware.RequireRoles("merchant_admin", "product_editor"))
+			merchantRouter.POST("/products", middleware.RequireRoles("merchant_admin", "product_editor"), api.AddProduct)
 			merchantRouter.GET("/product/:id", api.GetProductMerchant)
-			merchantRouter.PATCH("/products/:id/status", api.UpdateProductStatus, middleware.RequireRoles("merchant_admin", "product_editor"))
-			merchantRouter.PATCH("/products/:id/stock", api.UpdateProductStock, middleware.RequireRoles("merchant_admin", "product_editor"))
+			merchantRouter.PATCH("/products/:id/status", middleware.RequireRoles("merchant_admin", "product_editor"), api.UpdateProductStatus)
+			merchantRouter.PATCH("/products/:id/stock", middleware.RequireRoles("merchant_admin", "product_editor"), api.UpdateProductStock)
 			merchantRouter.POST("/images/upload-urls", api.GetImageUploadPresignURL)
 			merchantRouter.GET("/products", api.GetMerchantProductList)
-			merchantRouter.PUT("/products/:id", api.EditProductInfo, middleware.RequireRoles("merchant_admin", "product_editor"))
+			merchantRouter.PUT("/products/:id", middleware.RequireRoles("merchant_admin", "product_editor"), api.EditProductInfo)
 		}
 
 		customerRouter := baseRouter.Group("/customer")
