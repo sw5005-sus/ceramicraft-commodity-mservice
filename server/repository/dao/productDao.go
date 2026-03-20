@@ -12,8 +12,9 @@ import (
 	"gorm.io/gorm"
 )
 
-// This file contains the mock implementation for ProductDao interface
-// using gomock for unit testing. To generate the mock, run the following command:
+// This file defines the ProductDao interface and its GORM-based implementation.
+// The following go:generate directive can be used to generate a gomock-based mock
+// implementation of ProductDao for use in unit tests:
 //
 //go:generate mockgen -destination=./mocks/productDao_mock.go -package=mocks . ProductDao
 type ProductDao interface {
@@ -76,7 +77,8 @@ func (p *ProductDaoImpl) UpdateStockWithCAS(ctx context.Context, id, version, ne
 		Where("id = ? AND version = ?", id, version).
 		Updates(map[string]interface{}{
 			"stock":            newStock,
-			"latest_editor_Id": editorId,
+			"latest_editor_id": editorId,
+			"version":          gorm.Expr("version + 1"),
 		})
 	if ret.Error != nil {
 		log.Logger.Errorf("Failed to update product ID %d: %v", id, ret.Error)
@@ -112,7 +114,7 @@ func (p *ProductDaoImpl) UpdateProductStock(ctx context.Context, id int, stock i
 		Where("id = ?", id).
 		Updates(map[string]interface{}{
 			"stock":            stock,
-			"latest_editor_Id": editorId,
+			"latest_editor_id": editorId,
 		})
 	if result.Error != nil {
 		log.Logger.Errorf("Failed to update product stock, ID: %d, stock: %d, error: %v", id, stock, result.Error)

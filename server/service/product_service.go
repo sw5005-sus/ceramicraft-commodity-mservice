@@ -73,7 +73,7 @@ func (p *ProductServiceImpl) GetPublishedProductByID(ctx context.Context, id int
 		log.Logger.Errorf("ProductService: Failed to get product by ID: %v", err)
 		return nil, err
 	}
-	if product == nil || product.Status == ProductStatusUnpublished {
+	if product == nil || product.Status != ProductStatusPublished {
 		return nil, nil
 	}
 	return types.NewProductInfo(product), nil
@@ -81,24 +81,12 @@ func (p *ProductServiceImpl) GetPublishedProductByID(ctx context.Context, id int
 
 // ReviewSubmit 提交审核
 func (p *ProductServiceImpl) ReviewSubmit(ctx context.Context, id int) error {
-	// 获取商品当前信息
-	product, err := p.productDao.GetProductByID(ctx, id)
+	product, err := p.checkAndGetProduct(ctx, id, ProductStatusUnpublished)
 	if err != nil {
-		log.Logger.Errorf("PublishProduct: Failed to get product by ID: %v", err)
 		return err
 	}
-	if product == nil {
-		return fmt.Errorf("product not found with ID: %d", id)
-	}
-
-	if product.Status != ProductStatusUnpublished {
-		return fmt.Errorf("only unpublished products can be submitted for review, product ID: %d", id)
-	}
-	oldStatus := int(product.Status)
-	product.Status = ProductStatusUnderReview
-	err = p.productDao.UpdateProductStatus(ctx, id, oldStatus, product)
+	err = p.updateProductStatus(ctx, id, product, ProductStatusUnderReview)
 	if err != nil {
-		log.Logger.Errorf("ReviewSubmit: Failed to update product status: %v", err)
 		return err
 	}
 	log.Logger.Infof("Product (ID: %d) submitted for review successfully", id)
@@ -108,19 +96,11 @@ func (p *ProductServiceImpl) ReviewSubmit(ctx context.Context, id int) error {
 // PublishProduct 上架商品
 func (p *ProductServiceImpl) PublishProduct(ctx context.Context, id int) error {
 	// 获取商品当前信息
-	product, err := p.productDao.GetProductByID(ctx, id)
+	product, err := p.checkAndGetProduct(ctx, id, ProductStatusUnderReview)
 	if err != nil {
-		log.Logger.Errorf("PublishProduct: Failed to get product by ID: %v", err)
 		return err
 	}
-	if product == nil {
-		return fmt.Errorf("product not found with ID: %d", id)
-	}
 
-	// 检查当前状态
-	if product.Status != ProductStatusUnderReview {
-		return fmt.Errorf("product (ID: %d) must be in review for publish", id)
-	}
 	userId := getUserId(ctx)
 	// 审核人跟编辑者不能是同一人
 	if product.LatestEditorId == userId {
@@ -128,43 +108,31 @@ func (p *ProductServiceImpl) PublishProduct(ctx context.Context, id int) error {
 	}
 
 	product.LatestReviewerId = userId
-	oldStatus := int(product.Status)
-	product.Status = ProductStatusPublished
-	// 更新状态为已上架
-	err = p.productDao.UpdateProductStatus(ctx, id, oldStatus, product)
+	err = p.updateProductStatus(ctx, id, product, ProductStatusPublished)
 	if err != nil {
-		log.Logger.Errorf("PublishProduct: Failed to update product status: %v", err)
 		return err
 	}
-
+	log.Logger.Infof("Product (ID: %d) published successfully", id)
 	return nil
 }
 
-// RejectReview 驳回审核
+// ReviewReject 驳回审核
 func (p *ProductServiceImpl) ReviewReject(ctx context.Context, id int) error {
-	product, err := p.productDao.GetProductByID(ctx, id)
+	product, err := p.checkAndGetProduct(ctx, id, ProductStatusUnderReview)
 	if err != nil {
-		log.Logger.Errorf("UnpublishProduct: Failed to get product by ID: %v", err)
 		return err
 	}
-	if product == nil {
-		return fmt.Errorf("product not found with ID: %d", id)
-	}
-	if product.Status != ProductStatusUnderReview {
-		return fmt.Errorf("only products under review can be rejected, product ID: %d", id)
-	}
+
 	userId := getUserId(ctx)
 	if product.LatestEditorId == userId {
 		return fmt.Errorf("the reviewer cannot be the same as the latest editor for product (ID: %d)", id)
 	}
 	product.LatestReviewerId = userId
-	oldStatus := int(product.Status)
-	product.Status = ProductStatusUnpublished
-	err = p.productDao.UpdateProductStatus(ctx, id, oldStatus, product)
+	err = p.updateProductStatus(ctx, id, product, ProductStatusUnpublished)
 	if err != nil {
-		log.Logger.Errorf("RejectReview: Failed to update product status: %v", err)
 		return err
 	}
+
 	log.Logger.Infof("Product (ID: %d) review rejected successfully", id)
 	return nil
 }
@@ -172,29 +140,48 @@ func (p *ProductServiceImpl) ReviewReject(ctx context.Context, id int) error {
 // UnpublishProduct 商品从上架状态变更为下架状态
 func (p *ProductServiceImpl) UnpublishProduct(ctx context.Context, id int) error {
 	// 获取商品当前信息
+	product, err := p.checkAndGetProduct(ctx, id, ProductStatusPublished)
+	if err != nil {
+		return err
+	}
+	// 更新状态为已下架
+	err = p.updateProductStatus(ctx, id, product, ProductStatusUnpublished)
+	if err != nil {
+		return err
+	}
+	log.Logger.Infof("Product (ID: %d) unpublished successfully", id)
+	return nil
+}
+
+// checkAndGetProduct 获取商品并检查状态
+func (p *ProductServiceImpl) checkAndGetProduct(ctx context.Context, id int, expectedStatus int) (*model.Product, error) {
+	// 获取商品信息
 	product, err := p.productDao.GetProductByID(ctx, id)
 	if err != nil {
-		log.Logger.Errorf("UnpublishProduct: Failed to get product by ID: %v", err)
-		return err
+		log.Logger.Errorf("Failed to get product by ID: %v", err)
+		return nil, err
 	}
 	if product == nil {
-		return fmt.Errorf("product not found with ID: %d", id)
+		return nil, fmt.Errorf("product not found with ID: %d", id)
 	}
 
-	// 检查当前状态
-	if product.Status == ProductStatusUnpublished {
-		return fmt.Errorf("product (ID: %d) is already unpublished", id)
+	// 检查商品状态
+	if int(product.Status) != expectedStatus {
+		return nil, fmt.Errorf("product (ID: %d) must be in status %d, current status: %d", id, expectedStatus, product.Status)
 	}
 
+	return product, nil
+}
+
+// updateProductStatus 更新商品状态
+func (p *ProductServiceImpl) updateProductStatus(ctx context.Context, id int, product *model.Product, newStatus int) error {
 	oldStatus := int(product.Status)
-	product.Status = ProductStatusUnpublished
-	// 更新状态为已下架
-	err = p.productDao.UpdateProductStatus(ctx, id, oldStatus, product)
+	product.Status = int32(newStatus)
+	err := p.productDao.UpdateProductStatus(ctx, id, oldStatus, product)
 	if err != nil {
-		log.Logger.Errorf("UnpublishProduct: Failed to update product status: %v", err)
+		log.Logger.Errorf("Failed to update product status: %v", err)
 		return err
 	}
-
 	return nil
 }
 

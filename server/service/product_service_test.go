@@ -225,6 +225,14 @@ func TestProductServiceImpl_PublishProduct(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expected error, got nil")
 	}
+
+	// editor and reviwer should not be the same person
+	p.LatestEditorId = 1
+	m.EXPECT().GetProductByID(ctx, 6).Return(p, nil)
+	err = testProductServiceImpl.PublishProduct(ctx, 6)
+	if err == nil {
+		t.Errorf("Expected error when editor and reviewer are the same, got nil")
+	}
 }
 
 func TestProductServiceImpl_UnpublishProduct(t *testing.T) {
@@ -238,7 +246,7 @@ func TestProductServiceImpl_UnpublishProduct(t *testing.T) {
 		Desc:             "This is a test product",
 		Stock:            50,
 		PicInfo:          "http://example.com/pic.jpg",
-		Status:           ProductStatusUnderReview,
+		Status:           ProductStatusPublished,
 		Category:         "Test Category",
 		Weight:           "1kg",
 		Material:         "Plastic",
@@ -247,7 +255,7 @@ func TestProductServiceImpl_UnpublishProduct(t *testing.T) {
 		CareInstructions: "Handle with care",
 	}
 	m.EXPECT().GetProductByID(ctx, 1).Return(p, nil)
-	m.EXPECT().UpdateProductStatus(ctx, 1, ProductStatusUnderReview, p).Return(nil)
+	m.EXPECT().UpdateProductStatus(ctx, 1, ProductStatusPublished, p).Return(nil)
 
 	testProductServiceImpl := &ProductServiceImpl{
 		productDao: m,
@@ -296,7 +304,7 @@ func TestProductServiceImpl_UnpublishProduct(t *testing.T) {
 		Desc:             "This is a test product",
 		Stock:            50,
 		PicInfo:          "http://example.com/pic.jpg",
-		Status:           ProductStatusUnderReview,
+		Status:           ProductStatusPublished,
 		Category:         "Test Category",
 		Weight:           "1kg",
 		Material:         "Plastic",
@@ -306,7 +314,7 @@ func TestProductServiceImpl_UnpublishProduct(t *testing.T) {
 	}
 	m.EXPECT().GetProductByID(ctx, 5).Return(p, nil)
 
-	m.EXPECT().UpdateProductStatus(ctx, 5, ProductStatusUnderReview, p).Return(errors.New("database error"))
+	m.EXPECT().UpdateProductStatus(ctx, 5, ProductStatusPublished, p).Return(errors.New("database error"))
 
 	err = testProductServiceImpl.UnpublishProduct(ctx, 5)
 	if err == nil {
@@ -935,6 +943,122 @@ func TestProductServiceImpl_UpdateProductStock(t *testing.T) {
 	err = testProductServiceImpl.UpdateProductStock(ctx, 7, 60)
 	if err == nil {
 		t.Errorf("Expected error when updating stock for published product, got nil")
+	}
+}
+func TestProductServiceImpl_ReviewReject(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	ctx := createContext()
+	m := mocks.NewMockProductDao(ctrl)
+
+	testProductServiceImpl := &ProductServiceImpl{
+		productDao: m,
+	}
+
+	product := &model.Product{
+		Name:             "Test Product",
+		Price:            200,
+		Desc:             "This is a test product",
+		Stock:            50,
+		PicInfo:          "http://example.com/pic.jpg",
+		Status:           ProductStatusUnderReview,
+		Category:         "Test Category",
+		Weight:           "1kg",
+		Material:         "Plastic",
+		Capacity:         "500ml",
+		Dimensions:       "10x10x10cm",
+		CareInstructions: "Handle with care",
+	}
+
+	m.EXPECT().GetProductByID(ctx, 1).Return(product, nil)
+	m.EXPECT().UpdateProductStatus(ctx, 1, ProductStatusUnderReview, product).Return(nil)
+
+	err := testProductServiceImpl.ReviewReject(ctx, 1)
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+
+	m.EXPECT().GetProductByID(ctx, 2).Return(&model.Product{
+		Name:   "Test Product",
+		Status: ProductStatusUnpublished,
+	}, nil)
+
+	err = testProductServiceImpl.ReviewReject(ctx, 2)
+	if err == nil {
+		t.Errorf("Expected error when rejecting an already unpublished product, got nil")
+	}
+
+	m.EXPECT().GetProductByID(ctx, 3).Return(nil, errors.New("product not found"))
+
+	err = testProductServiceImpl.ReviewReject(ctx, 3)
+	if err == nil {
+		t.Errorf("Expected error when product not found, got nil")
+	}
+
+	m.EXPECT().GetProductByID(ctx, 4).Return(nil, nil)
+
+	err = testProductServiceImpl.ReviewReject(ctx, 4)
+	if err == nil {
+		t.Errorf("Expected error when product does not exist, got nil")
+	}
+
+	// editor and reviwer should not be the same person
+	product.LatestEditorId = 1
+	m.EXPECT().GetProductByID(ctx, 5).Return(product, nil)
+	err = testProductServiceImpl.ReviewReject(ctx, 5)
+	if err == nil {
+		t.Errorf("Expected error when editor and reviewer are the same, got nil")
+	}
+}
+
+func TestProductServiceImpl_ReviewSubmit(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	ctx := createContext()
+	m := mocks.NewMockProductDao(ctrl)
+
+	testProductServiceImpl := &ProductServiceImpl{
+		productDao: m,
+	}
+
+	product := &model.Product{
+		Status:           ProductStatusUnpublished,
+		LatestEditorId:   1,
+		LatestReviewerId: 0,
+	}
+
+	m.EXPECT().GetProductByID(ctx, 1).Return(product, nil)
+	m.EXPECT().UpdateProductStatus(ctx, 1, ProductStatusUnpublished, product).Return(nil)
+
+	err := testProductServiceImpl.ReviewSubmit(ctx, 1)
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+
+	// Test case: product already under review
+	product.Status = ProductStatusUnderReview
+	m.EXPECT().GetProductByID(ctx, 2).Return(product, nil)
+
+	err = testProductServiceImpl.ReviewSubmit(ctx, 2)
+	if err == nil {
+		t.Errorf("Expected error when submitting review for product already under review, got nil")
+	}
+
+	// Test case: product not found
+	product.Status = ProductStatusUnpublished
+	m.EXPECT().GetProductByID(ctx, 3).Return(nil, nil)
+	err = testProductServiceImpl.ReviewSubmit(ctx, 3)
+	if err == nil {
+		t.Errorf("Expected error when product not found, got nil")
+	}
+
+	// Test case: database error
+	m.EXPECT().GetProductByID(ctx, 4).Return(product, nil)
+	m.EXPECT().UpdateProductStatus(ctx, 4, ProductStatusUnpublished, product).Return(errors.New("database error"))
+
+	err = testProductServiceImpl.ReviewSubmit(ctx, 4)
+	if err == nil {
+		t.Errorf("Expected database error, got nil")
 	}
 }
 

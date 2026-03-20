@@ -30,7 +30,13 @@ func AddProduct(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, data.ResponseFailed(err.Error()))
 		return
 	}
-	productId, err := service.GetProductServiceInstance().Create(c.Request.Context(), &req)
+	ctx, err := createCtxWithUserID(c)
+	if err != nil {
+		log.Logger.Errorf("AddProduct: Failed to create context with user ID: %v", err)
+		c.JSON(http.StatusUnauthorized, data.ResponseFailed("UserID needed from the context"))
+		return
+	}
+	productId, err := service.GetProductServiceInstance().Create(ctx, &req)
 	if err != nil {
 		log.Logger.Errorf("AddProduct: Failed to create product: %v", err)
 		c.JSON(http.StatusInternalServerError, data.ResponseFailed("Failed to create product"))
@@ -90,7 +96,7 @@ func GetProductMerchant(c *gin.Context) {
 // @Failure 400 {object} data.BaseResponse "请求参数错误"
 // @Failure 404 {object} data.BaseResponse "商品不存在"
 // @Failure 500 {object} data.BaseResponse "服务器内部错误"
-// @Router /merchant/products/:id/status [patch]
+// @Router /merchant/products/{id}/status [patch]
 func UpdateProductStatus(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -110,6 +116,7 @@ func UpdateProductStatus(c *gin.Context) {
 	if err != nil {
 		log.Logger.Errorf("PublishProduct: Failed to create context with user ID: %v", err)
 		c.JSON(http.StatusUnauthorized, data.ResponseFailed("UserID needed from the context"))
+		return
 	}
 	switch req.Status {
 	case service.ProductStatusUnderReview:
@@ -140,13 +147,13 @@ func UpdateProductStatus(c *gin.Context) {
 // @Tags 商品
 // @Accept json
 // @Produce json
-// @Param id path string true "商品ID"
+// @Param id path int true "商品ID"
 // @Param decision path string true "审核状态" Enums(approved, rejected)
 // @Success 200 {object} data.BaseResponse "更新成功"
 // @Failure 400 {object} data.BaseResponse "请求参数错误"
 // @Failure 404 {object} data.BaseResponse "商品不存在"
 // @Failure 500 {object} data.BaseResponse "服务器内部错误"
-// @Router /merchant/products/:id/review/:decision [post]
+// @Router /merchant/products/{id}/review/{decision} [post]
 func UpdateProductReviewResult(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -165,6 +172,7 @@ func UpdateProductReviewResult(c *gin.Context) {
 	if err != nil {
 		log.Logger.Errorf("UpdateProductReviewResult: Failed to create context with user ID: %v", err)
 		c.JSON(http.StatusUnauthorized, data.ResponseFailed("UserID needed from the context"))
+		return
 	}
 	switch decision {
 	case "approved":
@@ -446,11 +454,11 @@ func GetProductCustomer(c *gin.Context) {
 func createCtxWithUserID(c *gin.Context) (context.Context, error) {
 	val, exists := c.Get("userID")
 	if !exists {
-		return nil, fmt.Errorf("EditProductInfo: User ID not found in context")
+		return nil, fmt.Errorf("user id not found in context")
 	}
 	userId, ok := val.(int)
 	if !ok {
-		return nil, fmt.Errorf("EditProductInfo: User ID in context is not an integer")
+		return nil, fmt.Errorf("user id in context is not an integer")
 	}
 	return context.WithValue(c.Request.Context(), types.UserIDKey, userId), nil
 }
