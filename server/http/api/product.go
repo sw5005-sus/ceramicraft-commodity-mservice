@@ -1,14 +1,16 @@
 package api
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 
+	"github.com/gin-gonic/gin"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/http/data"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/log"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/service"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/types"
-	"github.com/gin-gonic/gin"
 )
 
 // AddProduct godoc
@@ -78,13 +80,13 @@ func GetProductMerchant(c *gin.Context) {
 }
 
 // PublishProduct godoc
-// @Summary 上架商品
-// @Description 将商品状态更改为上架状态
+// @Summary 商品审核或下架
+// @Description 将商品状态更改为审核中或者下架
 // @Tags 商品
 // @Accept json
 // @Produce json
-// @Param request body types.UpdateProductStatusRequest true "商品上架请求"
-// @Success 200 {object} data.BaseResponse "上架成功"
+// @Param request body types.UpdateProductStatusRequest true "商品状态修改请求"
+// @Success 200 {object} data.BaseResponse "修改成功"
 // @Failure 400 {object} data.BaseResponse "请求参数错误"
 // @Failure 404 {object} data.BaseResponse "商品不存在"
 // @Failure 500 {object} data.BaseResponse "服务器内部错误"
@@ -104,24 +106,78 @@ func UpdateProductStatus(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, data.ResponseFailed(err.Error()))
 		return
 	}
-
-	if req.Status == 1 {
-		err := service.GetProductServiceInstance().PublishProduct(c.Request.Context(), id)
+	ctx, err := createCtxWithUserID(c)
+	if err != nil {
+		log.Logger.Errorf("PublishProduct: Failed to create context with user ID: %v", err)
+		c.JSON(http.StatusUnauthorized, data.ResponseFailed("UserID needed from the context"))
+	}
+	switch req.Status {
+	case service.ProductStatusUnderReview:
+		err := service.GetProductServiceInstance().ReviewSubmit(ctx, id)
 		if err != nil {
 			log.Logger.Errorf("UpdateProductStatus: Failed to publish product: %v", err)
 			c.JSON(http.StatusOK, data.ResponseFailed(err.Error()))
 			return
 		}
-		c.JSON(http.StatusOK, data.ResponseSuccess("publish product success"))
-	} else {
-		err := service.GetProductServiceInstance().UnpublishProduct(c.Request.Context(), id)
+		c.JSON(http.StatusOK, data.ResponseSuccess("submit product review success"))
+	case service.ProductStatusUnpublished:
+		err := service.GetProductServiceInstance().UnpublishProduct(ctx, id)
 		if err != nil {
 			log.Logger.Errorf("UpdateProductStatus: Failed to unpublish product: %v", err)
 			c.JSON(http.StatusOK, data.ResponseFailed(err.Error()))
 			return
 		}
 		c.JSON(http.StatusOK, data.ResponseSuccess("unpublish product success"))
+	default:
+		log.Logger.Errorf("UpdateProductStatus: Invalid product status: %d", req.Status)
+		c.JSON(http.StatusBadRequest, data.ResponseFailed("Invalid product status"))
 	}
+}
+
+// UpdateProductReviewResult godoc
+// @Summary 审核商品
+// @Description 审核拒绝或者通过
+// @Tags 商品
+// @Accept json
+// @Produce json
+// @Param id path string true "商品ID"
+// @Param decision path string true "审核状态" Enums(approved, rejected)
+// @Success 200 {object} data.BaseResponse "更新成功"
+// @Failure 400 {object} data.BaseResponse "请求参数错误"
+// @Failure 404 {object} data.BaseResponse "商品不存在"
+// @Failure 500 {object} data.BaseResponse "服务器内部错误"
+// @Router /merchant/products/:id/review/:decision [post]
+func UpdateProductReviewResult(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		log.Logger.Errorf("GetProduct: Invalid product ID: %v", err)
+		c.JSON(http.StatusBadRequest, data.ResponseFailed("Invalid product ID"))
+		return
+	}
+	decision := c.Param("decision")
+	if decision != "approved" && decision != "rejected" {
+		log.Logger.Errorf("UpdateProductReviewResult: Invalid review status: %s", decision)
+		c.JSON(http.StatusBadRequest, data.ResponseFailed("Invalid review status"))
+		return
+	}
+	ctx, err := createCtxWithUserID(c)
+	if err != nil {
+		log.Logger.Errorf("UpdateProductReviewResult: Failed to create context with user ID: %v", err)
+		c.JSON(http.StatusUnauthorized, data.ResponseFailed("UserID needed from the context"))
+	}
+	switch decision {
+	case "approved":
+		err = service.GetProductServiceInstance().PublishProduct(ctx, id)
+	case "rejected":
+		err = service.GetProductServiceInstance().ReviewReject(ctx, id)
+	}
+	if err != nil {
+		log.Logger.Errorf("UpdateProductReviewResult: Failed to update product review result: %v", err)
+		c.JSON(http.StatusOK, data.ResponseFailed(err.Error()))
+		return
+	}
+	c.JSON(http.StatusOK, data.ResponseSuccess("update product review result success"))
 }
 
 // UpdateProductStock godoc
@@ -149,8 +205,13 @@ func UpdateProductStock(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, data.ResponseFailed(err.Error()))
 		return
 	}
-
-	err = service.GetProductServiceInstance().UpdateProductStock(c.Request.Context(), id, req.Stock)
+	ctx, err := createCtxWithUserID(c)
+	if err != nil {
+		log.Logger.Errorf("UpdateProductStock: Failed to create context with user ID: %v", err)
+		c.JSON(http.StatusUnauthorized, data.ResponseFailed("UserID needed from the context"))
+		return
+	}
+	err = service.GetProductServiceInstance().UpdateProductStock(ctx, id, req.Stock)
 	if err != nil {
 		log.Logger.Errorf("UpdateProductStock: Failed to update product stock: %v", err)
 		c.JSON(http.StatusOK, data.ResponseFailed(err.Error()))
@@ -325,9 +386,14 @@ func EditProductInfo(c *gin.Context) {
 	}
 
 	req.ID = id
-
+	ctx, err := createCtxWithUserID(c)
+	if err != nil {
+		log.Logger.Errorf("EditProductInfo: Failed to create context with user ID: %v", err)
+		c.JSON(http.StatusUnauthorized, data.ResponseFailed("UserID needed from the context"))
+		return
+	}
 	// 调用 service 层更新商品信息
-	err = service.GetProductServiceInstance().UpdateProductInfo(c.Request.Context(), &req)
+	err = service.GetProductServiceInstance().UpdateProductInfo(ctx, &req)
 	if err != nil {
 		log.Logger.Errorf("EditProductInfo: Failed to update product info: %v", err)
 		c.JSON(http.StatusInternalServerError, data.ResponseFailed("Failed to update product info"))
@@ -375,4 +441,16 @@ func GetProductCustomer(c *gin.Context) {
 
 	// 返回商品信息
 	c.JSON(http.StatusOK, data.ResponseSuccess(product))
+}
+
+func createCtxWithUserID(c *gin.Context) (context.Context, error) {
+	val, exists := c.Get("userID")
+	if !exists {
+		return nil, fmt.Errorf("EditProductInfo: User ID not found in context")
+	}
+	userId, ok := val.(int)
+	if !ok {
+		return nil, fmt.Errorf("EditProductInfo: User ID in context is not an integer")
+	}
+	return context.WithValue(c.Request.Context(), types.UserIDKey, userId), nil
 }

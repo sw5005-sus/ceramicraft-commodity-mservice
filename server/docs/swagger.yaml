@@ -577,23 +577,30 @@ paths:
       summary: 添加商品
       tags:
       - 商品
-  /merchant/products/:id/status:
-    patch:
+  /merchant/products/:id/review/:decision:
+    post:
       consumes:
       - application/json
-      description: 将商品状态更改为上架状态
+      description: 审核拒绝或者通过
       parameters:
-      - description: 商品上架请求
-        in: body
-        name: request
+      - description: 商品ID
+        in: path
+        name: id
         required: true
-        schema:
-          $ref: '#/definitions/types.UpdateProductStatusRequest'
+        type: string
+      - description: 审核状态
+        enum:
+        - approved
+        - rejected
+        in: path
+        name: decision
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
-          description: 上架成功
+          description: 更新成功
           schema:
             $ref: '#/definitions/data.BaseResponse'
         "400":
@@ -608,7 +615,41 @@ paths:
           description: 服务器内部错误
           schema:
             $ref: '#/definitions/data.BaseResponse'
-      summary: 上架商品
+      summary: 审核商品
+      tags:
+      - 商品
+  /merchant/products/:id/status:
+    patch:
+      consumes:
+      - application/json
+      description: 将商品状态更改为审核中或者下架
+      parameters:
+      - description: 商品状态修改请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.UpdateProductStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 修改成功
+          schema:
+            $ref: '#/definitions/data.BaseResponse'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/data.BaseResponse'
+        "404":
+          description: 商品不存在
+          schema:
+            $ref: '#/definitions/data.BaseResponse'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/data.BaseResponse'
+      summary: 商品审核或下架
       tags:
       - 商品
   /merchant/products/:id/stock:

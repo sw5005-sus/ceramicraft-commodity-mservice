@@ -12,14 +12,18 @@ import (
 	"gorm.io/gorm"
 )
 
+// This file contains the mock implementation for ProductDao interface
+// using gomock for unit testing. To generate the mock, run the following command:
+//
+//go:generate mockgen -destination=./mocks/productDao_mock.go -package=mocks . ProductDao
 type ProductDao interface {
 	CreateProduct(ctx context.Context, product *model.Product) (productId int, err error)
 	UpdateProduct(ctx context.Context, product *model.Product) error
-	UpdateStockWithCAS(ctx context.Context, id int, version int, newStock int) error
+	UpdateStockWithCAS(ctx context.Context, id int, version int, newStock int, editorId int) error
 	GetProductByID(ctx context.Context, id int) (*model.Product, error)
 	GetProductByIDs(ctx context.Context, ids []int) ([]*model.Product, error)
-	UpdateProductStatus(ctx context.Context, id int, status int) error
-	UpdateProductStock(ctx context.Context, id int, stock int) error
+	UpdateProductStatus(ctx context.Context, id, fromStatus int, product *model.Product) error
+	UpdateProductStock(ctx context.Context, id int, stock int, editorId int) error
 	ListProduct(ctx context.Context, q ListProductQuery) ([]*model.Product, int, error)
 }
 
@@ -67,8 +71,13 @@ func (p *ProductDaoImpl) UpdateProduct(ctx context.Context, product *model.Produ
 }
 
 // UpdateStockWithCAS
-func (p *ProductDaoImpl) UpdateStockWithCAS(ctx context.Context, id, version, newStock int) error {
-	ret := p.db.WithContext(ctx).Model(&model.Product{}).Where("id = ? AND version = ?", id, version).Update("stock", newStock)
+func (p *ProductDaoImpl) UpdateStockWithCAS(ctx context.Context, id, version, newStock int, editorId int) error {
+	ret := p.db.WithContext(ctx).Model(&model.Product{}).
+		Where("id = ? AND version = ?", id, version).
+		Updates(map[string]interface{}{
+			"stock":            newStock,
+			"latest_editor_Id": editorId,
+		})
 	if ret.Error != nil {
 		log.Logger.Errorf("Failed to update product ID %d: %v", id, ret.Error)
 		return ret.Error
@@ -98,8 +107,13 @@ func (p *ProductDaoImpl) GetProductByIDs(ctx context.Context, ids []int) ([]*mod
 }
 
 // UpdateProductStock 更新商品库存
-func (p *ProductDaoImpl) UpdateProductStock(ctx context.Context, id int, stock int) error {
-	result := p.db.WithContext(ctx).Model(&model.Product{}).Where("id = ?", id).Update("stock", stock)
+func (p *ProductDaoImpl) UpdateProductStock(ctx context.Context, id int, stock int, editorId int) error {
+	result := p.db.WithContext(ctx).Model(&model.Product{}).
+		Where("id = ?", id).
+		Updates(map[string]interface{}{
+			"stock":            stock,
+			"latest_editor_Id": editorId,
+		})
 	if result.Error != nil {
 		log.Logger.Errorf("Failed to update product stock, ID: %d, stock: %d, error: %v", id, stock, result.Error)
 		return result.Error
@@ -159,10 +173,13 @@ func (p *ProductDaoImpl) ListProduct(ctx context.Context, q ListProductQuery) ([
 }
 
 // UpdateProductStatus 更新商品状态
-func (p *ProductDaoImpl) UpdateProductStatus(ctx context.Context, id int, status int) error {
-	result := p.db.WithContext(ctx).Model(&model.Product{}).Where("id = ?", id).Update("status", status)
+func (p *ProductDaoImpl) UpdateProductStatus(ctx context.Context, id, fromStatus int, product *model.Product) error {
+	result := p.db.WithContext(ctx).Model(&model.Product{}).
+		Where("id = ? and status=?", id, fromStatus).
+		Select("status", "latest_reviewer_id").
+		Updates(product)
 	if result.Error != nil {
-		log.Logger.Errorf("Failed to update product status, ID: %d, status: %d, error: %v", id, status, result.Error)
+		log.Logger.Errorf("Failed to update product status, ID: %d, status: %d, error: %v", id, product.Status, result.Error)
 		return result.Error
 	}
 	if result.RowsAffected == 0 {

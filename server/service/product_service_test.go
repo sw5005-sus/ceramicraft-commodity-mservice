@@ -7,12 +7,12 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/log"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/repository/dao"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/repository/dao/mocks"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/repository/model"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/types"
-	"github.com/golang/mock/gomock"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -22,9 +22,10 @@ import (
 func TestProductServiceImpl_Create(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+	ctx := createContext()
 
 	m := mocks.NewMockProductDao(ctrl)
-
+	expectEditorId := 1
 	productModel := &model.Product{
 		Name:             "Test Product",
 		Price:            200,
@@ -38,9 +39,10 @@ func TestProductServiceImpl_Create(t *testing.T) {
 		Capacity:         "500ml",
 		Dimensions:       "10x10x10cm",
 		CareInstructions: "Handle with care",
+		LatestEditorId:   expectEditorId,
 	}
 
-	m.EXPECT().CreateProduct(context.Background(), gomock.Eq(productModel)).Return(1, nil)
+	m.EXPECT().CreateProduct(ctx, gomock.Eq(productModel)).Return(1, nil)
 
 	testProductServiceImpl := &ProductServiceImpl{
 		productDao: m,
@@ -61,7 +63,7 @@ func TestProductServiceImpl_Create(t *testing.T) {
 		CareInstructions: "Handle with care",
 	}
 
-	_, err := testProductServiceImpl.Create(context.Background(), productInfo)
+	_, err := testProductServiceImpl.Create(ctx, productInfo)
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
@@ -76,10 +78,10 @@ func init() {
 func TestProductServiceImpl_GetProductByID(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-
+	ctx := createContext()
 	m := mocks.NewMockProductDao(ctrl)
 
-	m.EXPECT().GetProductByID(context.Background(), 1).Return(&model.Product{
+	m.EXPECT().GetProductByID(ctx, 1).Return(&model.Product{
 		Name:             "Test Product",
 		Price:            200,
 		Desc:             "This is a test product",
@@ -98,7 +100,7 @@ func TestProductServiceImpl_GetProductByID(t *testing.T) {
 		productDao: m,
 	}
 
-	productInfo, err := testProductServiceImpl.GetProductByID(context.Background(), 1)
+	productInfo, err := testProductServiceImpl.GetProductByID(ctx, 1)
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
@@ -122,16 +124,16 @@ func TestProductServiceImpl_GetProductByID(t *testing.T) {
 		t.Errorf("Product info mismatch:\ngot: %+v\nwant: %+v", productInfo, expectedProductInfo)
 	}
 
-	m.EXPECT().GetProductByID(context.Background(), 2).Return(nil, errors.New("product not found"))
+	m.EXPECT().GetProductByID(ctx, 2).Return(nil, errors.New("product not found"))
 
-	_, err = testProductServiceImpl.GetProductByID(context.Background(), 2)
+	_, err = testProductServiceImpl.GetProductByID(ctx, 2)
 	if err == nil {
 		t.Errorf("Expected error when getting a non-existent product, got nil")
 	}
 
-	m.EXPECT().GetProductByID(context.Background(), 3).Return(nil, nil)
+	m.EXPECT().GetProductByID(ctx, 3).Return(nil, nil)
 
-	productInfo, _ = testProductServiceImpl.GetProductByID(context.Background(), 3)
+	productInfo, _ = testProductServiceImpl.GetProductByID(ctx, 3)
 	if productInfo != nil {
 		t.Errorf("Expected nil product info for non-existent product, got %+v", productInfo)
 	}
@@ -140,85 +142,86 @@ func TestProductServiceImpl_GetProductByID(t *testing.T) {
 func TestProductServiceImpl_PublishProduct(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-
+	ctx := createContext()
 	m := mocks.NewMockProductDao(ctrl)
-
-	m.EXPECT().GetProductByID(context.Background(), 1).Return(&model.Product{
+	p := &model.Product{
 		Name:             "Test Product",
 		Price:            200,
 		Desc:             "This is a test product",
 		Stock:            50,
 		PicInfo:          "http://example.com/pic.jpg",
-		Status:           0,
+		Status:           ProductStatusUnderReview,
 		Category:         "Test Category",
 		Weight:           "1kg",
 		Material:         "Plastic",
 		Capacity:         "500ml",
 		Dimensions:       "10x10x10cm",
 		CareInstructions: "Handle with care",
-	}, nil)
+	}
+	m.EXPECT().GetProductByID(ctx, 1).Return(p, nil)
 
-	m.EXPECT().UpdateProductStatus(context.Background(), 1, 1).Return(nil)
+	m.EXPECT().UpdateProductStatus(ctx, 1, ProductStatusUnderReview, p).Return(nil)
 
 	testProductServiceImpl := &ProductServiceImpl{
 		productDao: m,
 	}
 
-	err := testProductServiceImpl.PublishProduct(context.Background(), 1)
+	err := testProductServiceImpl.PublishProduct(ctx, 1)
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
 
-	m.EXPECT().GetProductByID(context.Background(), 2).Return(&model.Product{
+	p = &model.Product{
 		Name:             "Test Product",
 		Price:            200,
 		Desc:             "This is a test product",
 		Stock:            50,
 		PicInfo:          "http://example.com/pic.jpg",
-		Status:           1,
+		Status:           ProductStatusPublished,
 		Category:         "Test Category",
 		Weight:           "1kg",
 		Material:         "Plastic",
 		Capacity:         "500ml",
 		Dimensions:       "10x10x10cm",
 		CareInstructions: "Handle with care",
-	}, nil)
+	}
+	m.EXPECT().GetProductByID(ctx, 2).Return(p, nil)
 
-	err = testProductServiceImpl.PublishProduct(context.Background(), 2)
+	err = testProductServiceImpl.PublishProduct(ctx, 2)
 	if err == nil {
 		t.Errorf("Expected error when publishing an already published product, got nil")
 	}
 
-	m.EXPECT().GetProductByID(context.Background(), 3).Return(nil, errors.New("product not found"))
+	m.EXPECT().GetProductByID(ctx, 3).Return(nil, errors.New("product not found"))
 
-	err = testProductServiceImpl.PublishProduct(context.Background(), 3)
+	err = testProductServiceImpl.PublishProduct(ctx, 3)
 	if err == nil {
 		t.Errorf("Expected error, got nil")
 	}
 
-	m.EXPECT().GetProductByID(context.Background(), 4).Return(nil, nil)
-	err = testProductServiceImpl.PublishProduct(context.Background(), 4)
+	m.EXPECT().GetProductByID(ctx, 4).Return(nil, nil)
+	err = testProductServiceImpl.PublishProduct(ctx, 4)
 	if err == nil {
 		t.Errorf("Expected error, got nil")
 	}
-
-	m.EXPECT().GetProductByID(context.Background(), 5).Return(&model.Product{
+	p = &model.Product{
 		Name:             "Test Product",
 		Price:            200,
 		Desc:             "This is a test product",
 		Stock:            50,
 		PicInfo:          "http://example.com/pic.jpg",
-		Status:           0,
+		Status:           ProductStatusUnderReview,
 		Category:         "Test Category",
 		Weight:           "1kg",
 		Material:         "Plastic",
 		Capacity:         "500ml",
 		Dimensions:       "10x10x10cm",
 		CareInstructions: "Handle with care",
-	}, nil)
+	}
+	m.EXPECT().GetProductByID(ctx, 5).Return(p, nil)
 
-	m.EXPECT().UpdateProductStatus(context.Background(), 5, 1).Return(errors.New("database error"))
-	err = testProductServiceImpl.PublishProduct(context.Background(), 5)
+	m.EXPECT().UpdateProductStatus(ctx, 5, ProductStatusUnderReview, p).Return(errors.New("database error"))
+	err = testProductServiceImpl.PublishProduct(ctx, 5)
 	if err == nil {
 		t.Errorf("Expected error, got nil")
 	}
@@ -227,36 +230,35 @@ func TestProductServiceImpl_PublishProduct(t *testing.T) {
 func TestProductServiceImpl_UnpublishProduct(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-
+	ctx := createContext()
 	m := mocks.NewMockProductDao(ctrl)
-
-	m.EXPECT().GetProductByID(context.Background(), 1).Return(&model.Product{
+	p := &model.Product{
 		Name:             "Test Product",
 		Price:            200,
 		Desc:             "This is a test product",
 		Stock:            50,
 		PicInfo:          "http://example.com/pic.jpg",
-		Status:           1,
+		Status:           ProductStatusUnderReview,
 		Category:         "Test Category",
 		Weight:           "1kg",
 		Material:         "Plastic",
 		Capacity:         "500ml",
 		Dimensions:       "10x10x10cm",
 		CareInstructions: "Handle with care",
-	}, nil)
-
-	m.EXPECT().UpdateProductStatus(context.Background(), 1, 0).Return(nil)
+	}
+	m.EXPECT().GetProductByID(ctx, 1).Return(p, nil)
+	m.EXPECT().UpdateProductStatus(ctx, 1, ProductStatusUnderReview, p).Return(nil)
 
 	testProductServiceImpl := &ProductServiceImpl{
 		productDao: m,
 	}
 
-	err := testProductServiceImpl.UnpublishProduct(context.Background(), 1)
+	err := testProductServiceImpl.UnpublishProduct(ctx, 1)
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
 
-	m.EXPECT().GetProductByID(context.Background(), 2).Return(&model.Product{
+	m.EXPECT().GetProductByID(ctx, 2).Return(&model.Product{
 		Name:             "Test Product",
 		Price:            200,
 		Desc:             "This is a test product",
@@ -271,42 +273,42 @@ func TestProductServiceImpl_UnpublishProduct(t *testing.T) {
 		CareInstructions: "Handle with care",
 	}, nil)
 
-	err = testProductServiceImpl.UnpublishProduct(context.Background(), 2)
+	err = testProductServiceImpl.UnpublishProduct(ctx, 2)
 	if err == nil {
 		t.Errorf("Expected error when unpublishing an already unpublished product, got nil")
 	}
 
-	m.EXPECT().GetProductByID(context.Background(), 3).Return(nil, errors.New("product not found"))
+	m.EXPECT().GetProductByID(ctx, 3).Return(nil, errors.New("product not found"))
 
-	err = testProductServiceImpl.UnpublishProduct(context.Background(), 3)
+	err = testProductServiceImpl.UnpublishProduct(ctx, 3)
 	if err == nil {
 		t.Errorf("Expected error, got nil")
 	}
 
-	m.EXPECT().GetProductByID(context.Background(), 4).Return(nil, nil)
-	err = testProductServiceImpl.UnpublishProduct(context.Background(), 4)
+	m.EXPECT().GetProductByID(ctx, 4).Return(nil, nil)
+	err = testProductServiceImpl.UnpublishProduct(ctx, 4)
 	if err == nil {
 		t.Errorf("Expected error, got nil")
 	}
-
-	m.EXPECT().GetProductByID(context.Background(), 5).Return(&model.Product{
+	p = &model.Product{
 		Name:             "Test Product",
 		Price:            200,
 		Desc:             "This is a test product",
 		Stock:            50,
 		PicInfo:          "http://example.com/pic.jpg",
-		Status:           1,
+		Status:           ProductStatusUnderReview,
 		Category:         "Test Category",
 		Weight:           "1kg",
 		Material:         "Plastic",
 		Capacity:         "500ml",
 		Dimensions:       "10x10x10cm",
 		CareInstructions: "Handle with care",
-	}, nil)
+	}
+	m.EXPECT().GetProductByID(ctx, 5).Return(p, nil)
 
-	m.EXPECT().UpdateProductStatus(context.Background(), 5, 0).Return(errors.New("database error"))
+	m.EXPECT().UpdateProductStatus(ctx, 5, ProductStatusUnderReview, p).Return(errors.New("database error"))
 
-	err = testProductServiceImpl.UnpublishProduct(context.Background(), 5)
+	err = testProductServiceImpl.UnpublishProduct(ctx, 5)
 	if err == nil {
 		t.Errorf("Expected database error, got nil")
 	}
@@ -315,7 +317,7 @@ func TestProductServiceImpl_UnpublishProduct(t *testing.T) {
 func TestProductServiceImpl_GetPublishedProductByID(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-
+	ctx := createContext()
 	m := mocks.NewMockProductDao(ctrl)
 	testProductServiceImpl := &ProductServiceImpl{
 		productDao: m,
@@ -336,9 +338,9 @@ func TestProductServiceImpl_GetPublishedProductByID(t *testing.T) {
 		Capacity:         "500ml",
 		CareInstructions: "小心轻放",
 	}
-	m.EXPECT().GetProductByID(context.Background(), 1).Return(publishedProduct, nil)
+	m.EXPECT().GetProductByID(ctx, 1).Return(publishedProduct, nil)
 
-	productInfo, err := testProductServiceImpl.GetPublishedProductByID(context.Background(), 1)
+	productInfo, err := testProductServiceImpl.GetPublishedProductByID(ctx, 1)
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
@@ -359,9 +361,9 @@ func TestProductServiceImpl_GetPublishedProductByID(t *testing.T) {
 		Name:   "未上架商品",
 		Status: 0, // 未上架
 	}
-	m.EXPECT().GetProductByID(context.Background(), 2).Return(unpublishedProduct, nil)
+	m.EXPECT().GetProductByID(ctx, 2).Return(unpublishedProduct, nil)
 
-	productInfo, err = testProductServiceImpl.GetPublishedProductByID(context.Background(), 2)
+	productInfo, err = testProductServiceImpl.GetPublishedProductByID(ctx, 2)
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
@@ -370,9 +372,9 @@ func TestProductServiceImpl_GetPublishedProductByID(t *testing.T) {
 	}
 
 	// 测试获取不存在的商品
-	m.EXPECT().GetProductByID(context.Background(), 3).Return(nil, nil)
+	m.EXPECT().GetProductByID(ctx, 3).Return(nil, nil)
 
-	productInfo, err = testProductServiceImpl.GetPublishedProductByID(context.Background(), 3)
+	productInfo, err = testProductServiceImpl.GetPublishedProductByID(ctx, 3)
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
@@ -381,9 +383,9 @@ func TestProductServiceImpl_GetPublishedProductByID(t *testing.T) {
 	}
 
 	// 测试数据库错误的情况
-	m.EXPECT().GetProductByID(context.Background(), 4).Return(nil, errors.New("database error"))
+	m.EXPECT().GetProductByID(ctx, 4).Return(nil, errors.New("database error"))
 
-	productInfo, err = testProductServiceImpl.GetPublishedProductByID(context.Background(), 4)
+	productInfo, err = testProductServiceImpl.GetPublishedProductByID(ctx, 4)
 	if err == nil {
 		t.Error("Expected database error, got nil")
 	}
@@ -556,6 +558,7 @@ func TestProductServiceImpl_GetProductList(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			ctx := createContext()
 			// 设置Mock期望
 			m.EXPECT().ListProduct(gomock.Any(), dao.ListProductQuery{
 				Keyword:    tc.query.Keyword,
@@ -567,7 +570,7 @@ func TestProductServiceImpl_GetProductList(t *testing.T) {
 			}).Return(tc.mockResult, tc.mockCount, tc.mockError)
 
 			// 调用被测试的方法
-			products, count, err := testProductServiceImpl.GetProductList(context.Background(), tc.query)
+			products, count, err := testProductServiceImpl.GetProductList(ctx, tc.query)
 
 			// 验证结果
 			if tc.expectError {
@@ -615,14 +618,14 @@ func TestProductServiceImpl_GetProductList(t *testing.T) {
 func TestProductServiceImpl_UpdateStockWithCAS(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-
+	ctx := createContext()
 	m := mocks.NewMockProductDao(ctrl)
 	testProductServiceImpl := &ProductServiceImpl{
 		productDao: m,
 	}
 
 	// 测试成功增加库存
-	m.EXPECT().GetProductByID(context.Background(), 1).Return(&model.Product{
+	m.EXPECT().GetProductByID(ctx, 1).Return(&model.Product{
 		Model: gorm.Model{
 			ID: 1,
 		},
@@ -630,15 +633,15 @@ func TestProductServiceImpl_UpdateStockWithCAS(t *testing.T) {
 		Stock:   50,
 		Version: 1,
 	}, nil)
-	m.EXPECT().UpdateStockWithCAS(context.Background(), 1, 1, 60).Return(nil)
+	m.EXPECT().UpdateStockWithCAS(ctx, 1, 1, 60, 1).Return(nil)
 
-	err := testProductServiceImpl.UpdateStockWithCAS(context.Background(), 1, 10)
+	err := testProductServiceImpl.UpdateStockWithCAS(ctx, 1, 10)
 	if err != nil {
 		t.Errorf("Expected no error when increasing stock, got %v", err)
 	}
 
 	// 测试成功减少库存
-	m.EXPECT().GetProductByID(context.Background(), 2).Return(&model.Product{
+	m.EXPECT().GetProductByID(ctx, 2).Return(&model.Product{
 		Model: gorm.Model{
 			ID: 2,
 		},
@@ -646,15 +649,15 @@ func TestProductServiceImpl_UpdateStockWithCAS(t *testing.T) {
 		Stock:   50,
 		Version: 1,
 	}, nil)
-	m.EXPECT().UpdateStockWithCAS(context.Background(), 2, 1, 40).Return(nil)
+	m.EXPECT().UpdateStockWithCAS(ctx, 2, 1, 40, 1).Return(nil)
 
-	err = testProductServiceImpl.UpdateStockWithCAS(context.Background(), 2, -10)
+	err = testProductServiceImpl.UpdateStockWithCAS(ctx, 2, -10)
 	if err != nil {
 		t.Errorf("Expected no error when decreasing stock, got %v", err)
 	}
 
 	// 测试库存不足的情况
-	m.EXPECT().GetProductByID(context.Background(), 3).Return(&model.Product{
+	m.EXPECT().GetProductByID(ctx, 3).Return(&model.Product{
 		Model: gorm.Model{
 			ID: 3,
 		},
@@ -663,21 +666,21 @@ func TestProductServiceImpl_UpdateStockWithCAS(t *testing.T) {
 		Version: 1,
 	}, nil)
 
-	err = testProductServiceImpl.UpdateStockWithCAS(context.Background(), 3, -10)
+	err = testProductServiceImpl.UpdateStockWithCAS(ctx, 3, -10)
 	if err == nil {
 		t.Error("Expected error when stock is insufficient, got nil")
 	}
 
 	// 测试获取商品信息失败
-	m.EXPECT().GetProductByID(context.Background(), 4).Return(nil, fmt.Errorf("database error"))
+	m.EXPECT().GetProductByID(ctx, 4).Return(nil, fmt.Errorf("database error"))
 
-	err = testProductServiceImpl.UpdateStockWithCAS(context.Background(), 4, 10)
+	err = testProductServiceImpl.UpdateStockWithCAS(ctx, 4, 10)
 	if err == nil {
 		t.Error("Expected error when getting product fails, got nil")
 	}
 
 	// 测试CAS更新失败（版本号不匹配）
-	m.EXPECT().GetProductByID(context.Background(), 5).Return(&model.Product{
+	m.EXPECT().GetProductByID(ctx, 5).Return(&model.Product{
 		Model: gorm.Model{
 			ID: 5,
 		},
@@ -685,9 +688,9 @@ func TestProductServiceImpl_UpdateStockWithCAS(t *testing.T) {
 		Stock:   50,
 		Version: 1,
 	}, nil)
-	m.EXPECT().UpdateStockWithCAS(context.Background(), 5, 1, 60).Return(fmt.Errorf("version conflict"))
+	m.EXPECT().UpdateStockWithCAS(ctx, 5, 1, 60, 1).Return(fmt.Errorf("version conflict"))
 
-	err = testProductServiceImpl.UpdateStockWithCAS(context.Background(), 5, 10)
+	err = testProductServiceImpl.UpdateStockWithCAS(ctx, 5, 10)
 	if err == nil {
 		t.Error("Expected error when CAS update fails, got nil")
 	}
@@ -696,7 +699,7 @@ func TestProductServiceImpl_UpdateStockWithCAS(t *testing.T) {
 func TestProductServiceImpl_UpdateProductInfo(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-
+	ctx := createContext()
 	m := mocks.NewMockProductDao(ctrl)
 	testProductServiceImpl := &ProductServiceImpl{
 		productDao: m,
@@ -751,38 +754,39 @@ func TestProductServiceImpl_UpdateProductInfo(t *testing.T) {
 		CareInstructions: updateRequest.CareInstructions,
 		Status:           existingProduct.Status,  // 保持原有状态
 		Version:          existingProduct.Version, // 保持原有版本
+		LatestEditorId:   1,                       // 假设编辑者ID为1
 	}
 
-	m.EXPECT().GetProductByID(context.Background(), 1).Return(existingProduct, nil)
-	m.EXPECT().UpdateProduct(context.Background(), expectedUpdatedProduct).Return(nil)
+	m.EXPECT().GetProductByID(ctx, 1).Return(existingProduct, nil)
+	m.EXPECT().UpdateProduct(ctx, expectedUpdatedProduct).Return(nil)
 
-	err := testProductServiceImpl.UpdateProductInfo(context.Background(), updateRequest)
+	err := testProductServiceImpl.UpdateProductInfo(ctx, updateRequest)
 	if err != nil {
 		t.Errorf("Expected no error when updating product info, got %v", err)
 	}
 
 	// 测试商品不存在的情况
-	m.EXPECT().GetProductByID(context.Background(), 2).Return(nil, errors.New("product not found"))
+	m.EXPECT().GetProductByID(ctx, 2).Return(nil, errors.New("product not found"))
 
 	updateRequest2 := &types.UpdateProductInfoRequest{
 		ID:   2,
 		Name: "Test Product",
 	}
 
-	err = testProductServiceImpl.UpdateProductInfo(context.Background(), updateRequest2)
+	err = testProductServiceImpl.UpdateProductInfo(ctx, updateRequest2)
 	if err == nil {
 		t.Error("Expected error when product not found, got nil")
 	}
 
 	// 测试商品为nil的情况
-	m.EXPECT().GetProductByID(context.Background(), 3).Return(nil, nil)
+	m.EXPECT().GetProductByID(ctx, 3).Return(nil, nil)
 
 	updateRequest3 := &types.UpdateProductInfoRequest{
 		ID:   3,
 		Name: "Test Product",
 	}
 
-	err = testProductServiceImpl.UpdateProductInfo(context.Background(), updateRequest3)
+	err = testProductServiceImpl.UpdateProductInfo(ctx, updateRequest3)
 	if err == nil {
 		t.Error("Expected error when product is nil, got nil")
 	}
@@ -796,14 +800,14 @@ func TestProductServiceImpl_UpdateProductInfo(t *testing.T) {
 		Status: 1, // 已上架
 	}
 
-	m.EXPECT().GetProductByID(context.Background(), 4).Return(publishedProduct, nil)
+	m.EXPECT().GetProductByID(ctx, 4).Return(publishedProduct, nil)
 
 	updateRequest4 := &types.UpdateProductInfoRequest{
 		ID:   4,
 		Name: "Updated Name",
 	}
 
-	err = testProductServiceImpl.UpdateProductInfo(context.Background(), updateRequest4)
+	err = testProductServiceImpl.UpdateProductInfo(ctx, updateRequest4)
 	if err == nil {
 		t.Error("Expected error when updating published product, got nil")
 	}
@@ -839,12 +843,13 @@ func TestProductServiceImpl_UpdateProductInfo(t *testing.T) {
 		CareInstructions: updateRequest5.CareInstructions,
 		Status:           unpublishedProduct.Status,
 		Version:          unpublishedProduct.Version,
+		LatestEditorId:   1,
 	}
 
-	m.EXPECT().GetProductByID(context.Background(), 5).Return(unpublishedProduct, nil)
-	m.EXPECT().UpdateProduct(context.Background(), expectedUpdatedProduct5).Return(errors.New("database error"))
+	m.EXPECT().GetProductByID(ctx, 5).Return(unpublishedProduct, nil)
+	m.EXPECT().UpdateProduct(ctx, expectedUpdatedProduct5).Return(errors.New("database error"))
 
-	err = testProductServiceImpl.UpdateProductInfo(context.Background(), updateRequest5)
+	err = testProductServiceImpl.UpdateProductInfo(ctx, updateRequest5)
 	if err == nil {
 		t.Error("Expected error when DAO update fails, got nil")
 	}
@@ -853,82 +858,87 @@ func TestProductServiceImpl_UpdateProductInfo(t *testing.T) {
 func TestProductServiceImpl_UpdateProductStock(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-
+	ctx := createContext()
 	m := mocks.NewMockProductDao(ctrl)
 	testProductServiceImpl := &ProductServiceImpl{
 		productDao: m,
 	}
 
 	// 测试成功更新库存的情况
-	m.EXPECT().GetProductByID(context.Background(), 1).Return(&model.Product{
+	m.EXPECT().GetProductByID(ctx, 1).Return(&model.Product{
 		Name:   "Test Product",
 		Stock:  50,
 		Status: 0,
 	}, nil)
-	m.EXPECT().UpdateProductStock(context.Background(), 1, 60).Return(nil)
+	m.EXPECT().UpdateProductStock(ctx, 1, 60, 1).Return(nil)
 
-	err := testProductServiceImpl.UpdateProductStock(context.Background(), 1, 60)
+	err := testProductServiceImpl.UpdateProductStock(ctx, 1, 60)
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
 
 	// 测试产品不存在的情况
-	m.EXPECT().GetProductByID(context.Background(), 2).Return(nil, errors.New("product not found"))
+	m.EXPECT().GetProductByID(ctx, 2).Return(nil, errors.New("product not found"))
 
-	err = testProductServiceImpl.UpdateProductStock(context.Background(), 2, 30)
+	err = testProductServiceImpl.UpdateProductStock(ctx, 2, 30)
 	if err == nil {
 		t.Errorf("Expected error for non-existent product, got nil")
 	}
 
 	// 测试产品为nil的情况
-	m.EXPECT().GetProductByID(context.Background(), 3).Return(nil, nil)
+	m.EXPECT().GetProductByID(ctx, 3).Return(nil, nil)
 
-	err = testProductServiceImpl.UpdateProductStock(context.Background(), 3, 30)
+	err = testProductServiceImpl.UpdateProductStock(ctx, 3, 30)
 	if err == nil {
 		t.Errorf("Expected error for nil product, got nil")
 	}
 
 	// 测试更新库存失败的情况
-	m.EXPECT().GetProductByID(context.Background(), 4).Return(&model.Product{
+	m.EXPECT().GetProductByID(ctx, 4).Return(&model.Product{
 		Name:   "Test Product",
 		Stock:  50,
 		Status: 0,
 	}, nil)
-	m.EXPECT().UpdateProductStock(context.Background(), 4, 70).Return(errors.New("database error"))
+	m.EXPECT().UpdateProductStock(ctx, 4, 70, 1).Return(errors.New("database error"))
 
-	err = testProductServiceImpl.UpdateProductStock(context.Background(), 4, 70)
+	err = testProductServiceImpl.UpdateProductStock(ctx, 4, 70)
 	if err == nil {
 		t.Errorf("Expected database error, got nil")
 	}
 
 	// 测试更新负数库存的情况
-	err = testProductServiceImpl.UpdateProductStock(context.Background(), 5, -10)
+	err = testProductServiceImpl.UpdateProductStock(ctx, 5, -10)
 	if err == nil {
 		t.Errorf("Expected error for negative stock, got nil")
 	}
 
 	// 测试更新库存为零的情况
-	m.EXPECT().GetProductByID(context.Background(), 6).Return(&model.Product{
+	m.EXPECT().GetProductByID(ctx, 6).Return(&model.Product{
 		Name:   "Test Product",
 		Stock:  50,
 		Status: 0,
 	}, nil)
-	m.EXPECT().UpdateProductStock(context.Background(), 6, 0).Return(nil)
+	m.EXPECT().UpdateProductStock(ctx, 6, 0, 1).Return(nil)
 
-	err = testProductServiceImpl.UpdateProductStock(context.Background(), 6, 0)
+	err = testProductServiceImpl.UpdateProductStock(ctx, 6, 0)
 	if err != nil {
 		t.Errorf("Expected no error for zero stock, got %v", err)
 	}
 
 	// 测试更新已上架商品库存的情况
-	m.EXPECT().GetProductByID(context.Background(), 7).Return(&model.Product{
+	m.EXPECT().GetProductByID(ctx, 7).Return(&model.Product{
 		Name:   "Test Product",
 		Stock:  50,
 		Status: 1,
 	}, nil)
 
-	err = testProductServiceImpl.UpdateProductStock(context.Background(), 7, 60)
+	err = testProductServiceImpl.UpdateProductStock(ctx, 7, 60)
 	if err == nil {
 		t.Errorf("Expected error when updating stock for published product, got nil")
 	}
+}
+
+func createContext() context.Context {
+	parent := context.Background()
+	return context.WithValue(parent, types.UserIDKey, 1)
 }
