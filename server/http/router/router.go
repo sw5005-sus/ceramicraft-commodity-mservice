@@ -4,6 +4,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
+	auditclient "github.com/sw5005-sus/ceramicraft-audit-client"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/config"
 	_ "github.com/sw5005-sus/ceramicraft-commodity-mservice/server/docs"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/http/api"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/metrics"
@@ -13,12 +15,16 @@ import (
 )
 
 const (
+	serviceName   = "product-ms"
 	servicePrefix = "/product-ms/v1"
 )
 
 func NewRouter() *gin.Engine {
 	r := gin.Default()
-
+	auditMiddleware := auditclient.AuditMiddleware(
+		serviceName,
+		config.Config.AuditGrpc.Host,
+		config.Config.AuditGrpc.Port)
 	baseRouter := r.Group(servicePrefix)
 	{
 
@@ -37,14 +43,14 @@ func NewRouter() *gin.Engine {
 		merchantRouter := baseRouter.Group("/merchant")
 		{
 			merchantRouter.Use(middleware.AuthMiddleware())
-			merchantRouter.POST("/products", middleware.RequireRoles("merchant_admin", "product_editor"), api.AddProduct)
+			merchantRouter.POST("/products", middleware.RequireRoles("merchant_admin", "product_editor"), auditMiddleware, api.AddProduct)
 			merchantRouter.GET("/product/:id", api.GetProductMerchant)
-			merchantRouter.PATCH("/products/:id/status", middleware.RequireRoles("merchant_admin", "product_editor"), api.UpdateProductStatus)
-			merchantRouter.PATCH("/products/:id/stock", middleware.RequireRoles("merchant_admin", "product_editor"), api.UpdateProductStock)
+			merchantRouter.PATCH("/products/:id/status", middleware.RequireRoles("merchant_admin", "product_editor"), auditMiddleware, api.UpdateProductStatus)
+			merchantRouter.PATCH("/products/:id/stock", middleware.RequireRoles("merchant_admin", "product_editor"), auditMiddleware, api.UpdateProductStock)
 			merchantRouter.POST("/images/upload-urls", api.GetImageUploadPresignURL)
 			merchantRouter.GET("/products", api.GetMerchantProductList)
-			merchantRouter.PUT("/products/:id", middleware.RequireRoles("merchant_admin", "product_editor"), api.EditProductInfo)
-			merchantRouter.POST("/products/:id/review/:decision", middleware.RequireRoles("merchant_admin", "product_reviewer"), api.UpdateProductReviewResult)
+			merchantRouter.PUT("/products/:id", middleware.RequireRoles("merchant_admin", "product_editor"), auditMiddleware, api.EditProductInfo)
+			merchantRouter.POST("/products/:id/review/:decision", middleware.RequireRoles("merchant_admin", "product_reviewer"), auditMiddleware, api.UpdateProductReviewResult)
 		}
 
 		customerRouter := baseRouter.Group("/customer")
