@@ -15,6 +15,8 @@ type ProductService interface {
 	GetProductByID(ctx context.Context, id int) (productInfo *types.ProductInfo, err error)
 	PublishProduct(ctx context.Context, id int) error
 	UnpublishProduct(ctx context.Context, id int) error
+	ReviewSubmit(ctx context.Context, id int) error
+	ReviewReject(ctx context.Context, id int) error
 
 	// 商家后台更新商品库存
 	UpdateProductStock(ctx context.Context, id int, newStock int) error
@@ -35,20 +37,9 @@ func GetProductServiceInstance() *ProductServiceImpl {
 }
 
 func (p *ProductServiceImpl) Create(ctx context.Context, product *types.ProductInfo) (productId int, err error) {
-	id, err := p.productDao.CreateProduct(ctx, &model.Product{
-		Name:             product.Name,
-		Category:         product.Category,
-		Price:            product.Price,
-		Desc:             product.Desc,
-		Stock:            product.Stock,
-		PicInfo:          product.PicInfo,
-		Weight:           product.Weight,
-		Material:         product.Material,
-		Capacity:         product.Capacity,
-		Dimensions:       product.Dimensions,
-		CareInstructions: product.CareInstructions,
-		Status:           product.Status,
-	})
+	productModel := product.ToProductModel()
+	productModel.LatestEditorId = getUserId(ctx)
+	id, err := p.productDao.CreateProduct(ctx, productModel)
 	if err != nil {
 		log.Logger.Errorf("ProductService: Failed to create product: %v", err)
 		return -1, err
@@ -66,25 +57,13 @@ func (p *ProductServiceImpl) GetProductByID(ctx context.Context, id int) (produc
 	if product == nil {
 		return nil, nil
 	}
-	return &types.ProductInfo{
-		Name:             product.Name,
-		Category:         product.Category,
-		Price:            product.Price,
-		Desc:             product.Desc,
-		Stock:            product.Stock,
-		PicInfo:          product.PicInfo,
-		Weight:           product.Weight,
-		Material:         product.Material,
-		Capacity:         product.Capacity,
-		Dimensions:       product.Dimensions,
-		CareInstructions: product.CareInstructions,
-		Status:           product.Status,
-	}, nil
+	return types.NewProductInfo(product), nil
 }
 
 const (
 	ProductStatusUnpublished = 0 // 下架状态
 	ProductStatusPublished   = 1 // 上架状态
+	ProductStatusUnderReview = 2 // 审核中状态
 )
 
 // GetProductByID 根据ID获取产品信息 (用户侧， 只有上架的商品才能查看详情页)
@@ -94,76 +73,115 @@ func (p *ProductServiceImpl) GetPublishedProductByID(ctx context.Context, id int
 		log.Logger.Errorf("ProductService: Failed to get product by ID: %v", err)
 		return nil, err
 	}
-	if product == nil || product.Status == ProductStatusUnpublished {
+	if product == nil || product.Status != ProductStatusPublished {
 		return nil, nil
 	}
-	return &types.ProductInfo{
-		Name:             product.Name,
-		Category:         product.Category,
-		Price:            product.Price,
-		Desc:             product.Desc,
-		Stock:            product.Stock,
-		PicInfo:          product.PicInfo,
-		Weight:           product.Weight,
-		Material:         product.Material,
-		Capacity:         product.Capacity,
-		Dimensions:       product.Dimensions,
-		CareInstructions: product.CareInstructions,
-		Status:           product.Status,
-	}, nil
+	return types.NewProductInfo(product), nil
+}
+
+// ReviewSubmit 提交审核
+func (p *ProductServiceImpl) ReviewSubmit(ctx context.Context, id int) error {
+	product, err := p.checkAndGetProduct(ctx, id, ProductStatusUnpublished)
+	if err != nil {
+		return err
+	}
+	err = p.updateProductStatus(ctx, id, product, ProductStatusUnderReview)
+	if err != nil {
+		return err
+	}
+	log.Logger.Infof("Product (ID: %d) submitted for review successfully", id)
+	return nil
 }
 
 // PublishProduct 上架商品
 func (p *ProductServiceImpl) PublishProduct(ctx context.Context, id int) error {
 	// 获取商品当前信息
-	product, err := p.productDao.GetProductByID(ctx, id)
+	product, err := p.checkAndGetProduct(ctx, id, ProductStatusUnderReview)
 	if err != nil {
-		log.Logger.Errorf("PublishProduct: Failed to get product by ID: %v", err)
-		return err
-	}
-	if product == nil {
-		return fmt.Errorf("product not found with ID: %d", id)
-	}
-
-	// 检查当前状态
-	if product.Status == ProductStatusPublished {
-		return fmt.Errorf("product (ID: %d) is already published", id)
-	}
-
-	// 更新状态为已上架
-	err = p.productDao.UpdateProductStatus(ctx, id, ProductStatusPublished)
-	if err != nil {
-		log.Logger.Errorf("PublishProduct: Failed to update product status: %v", err)
 		return err
 	}
 
+	userId := getUserId(ctx)
+	// 审核人跟编辑者不能是同一人
+	if product.LatestEditorId == userId {
+		return fmt.Errorf("the reviewer cannot be the same as the latest editor for product (ID: %d)", id)
+	}
+
+	product.LatestReviewerId = userId
+	err = p.updateProductStatus(ctx, id, product, ProductStatusPublished)
+	if err != nil {
+		return err
+	}
+	log.Logger.Infof("Product (ID: %d) published successfully", id)
 	return nil
 }
 
-// UnpublishProduct 下架商品
+// ReviewReject 驳回审核
+func (p *ProductServiceImpl) ReviewReject(ctx context.Context, id int) error {
+	product, err := p.checkAndGetProduct(ctx, id, ProductStatusUnderReview)
+	if err != nil {
+		return err
+	}
+
+	userId := getUserId(ctx)
+	if product.LatestEditorId == userId {
+		return fmt.Errorf("the reviewer cannot be the same as the latest editor for product (ID: %d)", id)
+	}
+	product.LatestReviewerId = userId
+	err = p.updateProductStatus(ctx, id, product, ProductStatusUnpublished)
+	if err != nil {
+		return err
+	}
+
+	log.Logger.Infof("Product (ID: %d) review rejected successfully", id)
+	return nil
+}
+
+// UnpublishProduct 商品从上架状态变更为下架状态
 func (p *ProductServiceImpl) UnpublishProduct(ctx context.Context, id int) error {
 	// 获取商品当前信息
+	product, err := p.checkAndGetProduct(ctx, id, ProductStatusPublished)
+	if err != nil {
+		return err
+	}
+	// 更新状态为已下架
+	err = p.updateProductStatus(ctx, id, product, ProductStatusUnpublished)
+	if err != nil {
+		return err
+	}
+	log.Logger.Infof("Product (ID: %d) unpublished successfully", id)
+	return nil
+}
+
+// checkAndGetProduct 获取商品并检查状态
+func (p *ProductServiceImpl) checkAndGetProduct(ctx context.Context, id int, expectedStatus int) (*model.Product, error) {
+	// 获取商品信息
 	product, err := p.productDao.GetProductByID(ctx, id)
 	if err != nil {
-		log.Logger.Errorf("UnpublishProduct: Failed to get product by ID: %v", err)
-		return err
+		log.Logger.Errorf("Failed to get product by ID: %v", err)
+		return nil, err
 	}
 	if product == nil {
-		return fmt.Errorf("product not found with ID: %d", id)
+		return nil, fmt.Errorf("product not found with ID: %d", id)
 	}
 
-	// 检查当前状态
-	if product.Status == ProductStatusUnpublished {
-		return fmt.Errorf("product (ID: %d) is already unpublished", id)
+	// 检查商品状态
+	if int(product.Status) != expectedStatus {
+		return nil, fmt.Errorf("product (ID: %d) must be in status %d, current status: %d", id, expectedStatus, product.Status)
 	}
 
-	// 更新状态为已下架
-	err = p.productDao.UpdateProductStatus(ctx, id, ProductStatusUnpublished)
+	return product, nil
+}
+
+// updateProductStatus 更新商品状态
+func (p *ProductServiceImpl) updateProductStatus(ctx context.Context, id int, product *model.Product, newStatus int) error {
+	oldStatus := int(product.Status)
+	product.Status = int32(newStatus)
+	err := p.productDao.UpdateProductStatus(ctx, id, oldStatus, product)
 	if err != nil {
-		log.Logger.Errorf("UnpublishProduct: Failed to update product status: %v", err)
+		log.Logger.Errorf("Failed to update product status: %v", err)
 		return err
 	}
-
 	return nil
 }
 
@@ -194,7 +212,7 @@ func (p *ProductServiceImpl) UpdateProductStock(ctx context.Context, id int, new
 	}
 
 	// 更新库存
-	err = p.productDao.UpdateProductStock(ctx, id, newStock)
+	err = p.productDao.UpdateProductStock(ctx, id, newStock, getUserId(ctx))
 	if err != nil {
 		log.Logger.Errorf("UpdateProductStock: Failed to update stock: %v", err)
 		return err
@@ -241,13 +259,13 @@ func (p *ProductServiceImpl) UpdateStockWithCAS(ctx context.Context, id, deta in
 		return err
 	}
 
-	if int(pModel.Stock) + deta < 0 {
+	if int(pModel.Stock)+deta < 0 {
 		log.Logger.Errorf("UpdateStockWithCAS: do not have enough stock, product id: %d, current stock: %d", id, int(pModel.Stock))
 		return fmt.Errorf("do not have enough stock, product id: %d, current stock: %d", id, int(pModel.Stock))
 	}
 
 	newStock := int(pModel.Stock) + deta
-	err = p.productDao.UpdateStockWithCAS(ctx, id, int(pModel.Version), newStock)
+	err = p.productDao.UpdateStockWithCAS(ctx, id, int(pModel.Version), newStock, getUserId(ctx))
 	if err != nil {
 		log.Logger.Errorf("UpdateStockWithCAS: update failed, err:%s", err.Error())
 		return err
@@ -290,8 +308,9 @@ func (p *ProductServiceImpl) UpdateProductInfo(ctx context.Context, req *types.U
 		Weight:           req.Weight,
 		Capacity:         req.Capacity,
 		CareInstructions: req.CareInstructions,
-		Status:           product.Status, // 保持原有状态
+		Status:           product.Status,  // 保持原有状态
 		Version:          product.Version, // 保持原有版本
+		LatestEditorId:   getUserId(ctx),  // 更新编辑者为当前用户
 	}
 
 	// 调用DAO层更新商品信息
@@ -302,4 +321,13 @@ func (p *ProductServiceImpl) UpdateProductInfo(ctx context.Context, req *types.U
 	}
 
 	return nil
+}
+
+func getUserId(ctx context.Context) int {
+	userId, ok := ctx.Value(types.UserIDKey).(int)
+	if !ok {
+		log.Logger.Warn("getUserId: user_id not found in context or invalid type")
+		return 0
+	}
+	return userId
 }

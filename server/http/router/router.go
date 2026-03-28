@@ -44,6 +44,7 @@ func NewRouter() *gin.Engine {
 			merchantRouter.POST("/images/upload-urls", api.GetImageUploadPresignURL)
 			merchantRouter.GET("/products", api.GetMerchantProductList)
 			merchantRouter.PUT("/products/:id", middleware.RequireRoles("merchant_admin", "product_editor"), api.EditProductInfo)
+			merchantRouter.POST("/products/:id/review/:decision", middleware.RequireRoles("merchant_admin", "product_reviewer"), api.UpdateProductReviewResult)
 		}
 
 		customerRouter := baseRouter.Group("/customer")

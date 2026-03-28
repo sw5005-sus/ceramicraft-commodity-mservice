@@ -1,5 +1,13 @@
 package types
 
+import "github.com/sw5005-sus/ceramicraft-commodity-mservice/server/repository/model"
+
+type contextKey string
+
+const (
+	UserIDKey contextKey = "userID"
+)
+
 type ProductInfo struct {
 	Name             string `json:"name"`
 	Category         string `json:"category"`
@@ -13,6 +21,40 @@ type ProductInfo struct {
 	Capacity         string `json:"capacity"`
 	CareInstructions string `json:"care_instructions"`
 	Status           int32  `json:"status"` // 0: 未上架, 1: 已上架
+}
+
+func NewProductInfo(p *model.Product) *ProductInfo {
+	return &ProductInfo{
+		Name:             p.Name,
+		Category:         p.Category,
+		Price:            p.Price,
+		Desc:             p.Desc,
+		Stock:            p.Stock,
+		PicInfo:          p.PicInfo,
+		Weight:           p.Weight,
+		Material:         p.Material,
+		Capacity:         p.Capacity,
+		Dimensions:       p.Dimensions,
+		CareInstructions: p.CareInstructions,
+		Status:           p.Status,
+	}
+}
+
+func (p *ProductInfo) ToProductModel() *model.Product {
+	return &model.Product{
+		Name:             p.Name,
+		Category:         p.Category,
+		Price:            p.Price,
+		Desc:             p.Desc,
+		Stock:            p.Stock,
+		PicInfo:          p.PicInfo,
+		Weight:           p.Weight,
+		Material:         p.Material,
+		Capacity:         p.Capacity,
+		Dimensions:       p.Dimensions,
+		CareInstructions: p.CareInstructions,
+		Status:           p.Status,
+	}
 }
 
 type ProductSimplifiedInfo struct {
