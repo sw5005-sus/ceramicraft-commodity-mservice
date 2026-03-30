@@ -17,6 +17,7 @@ type Conf struct {
 	MySQLConfig *MySQL               `mapstructure:"mysql"`
 	S3Config    *S3Config            `mapstructure:"s3Config"`
 	KafkaConfig *KafkaConsumerConfig `mapstructure:"kafka"`
+	AuditGrpc   *GrpcConfig          `mapstructure:"audit_grpc"`
 }
 
 type KafkaConsumerConfig struct {
