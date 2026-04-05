@@ -50,7 +50,7 @@ func NewRouter() *gin.Engine {
 			merchantRouter.POST("/images/upload-urls", api.GetImageUploadPresignURL)
 			merchantRouter.GET("/products", api.GetMerchantProductList)
 			merchantRouter.PUT("/products/:id", middleware.RequireRoles("merchant_admin", "product_editor"), auditMiddleware, api.EditProductInfo)
-			merchantRouter.POST("/products/:id/review/:decision", middleware.RequireRoles("merchant_admin", "product_reviewer"), auditMiddleware, api.UpdateProductReviewResult)
+			merchantRouter.POST("/products/:id/review/:decision", middleware.RequireRoles("merchant_admin", "product_auditor"), auditMiddleware, api.UpdateProductReviewResult)
 		}
 
 		customerRouter := baseRouter.Group("/customer")
