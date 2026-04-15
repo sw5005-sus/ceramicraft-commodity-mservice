@@ -67,6 +67,7 @@ func NewRouter() *gin.Engine {
 				authed.DELETE("/cart/items/:item_id", api.DeleteCartItem)
 				authed.GET("/cart/selected-num", api.GetCartSelctedNum)
 				authed.GET("/cart/price-estimate", api.GetEstimatePrice)
+				merchantRouter.POST("/images/upload-urls", api.GetImageUploadPresignURL)
 			}
 		}
 	}

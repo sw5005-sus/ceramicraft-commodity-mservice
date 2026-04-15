@@ -467,46 +467,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/merchant/images/upload-urls": {
-            "post": {
-                "description": "Get presigned URL for image upload",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Image"
-                ],
-                "summary": "Get presigned URL for image upload",
-                "parameters": [
-                    {
-                        "description": "image_type=(jpg|jpeg|png)",
-                        "name": "product",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/data.ImgUploadRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/data.ImgUploadResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/data.BaseResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/merchant/product/{id}": {
             "get": {
                 "description": "根据商品ID获取商品详细信息",
@@ -866,6 +826,57 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/data.BaseResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/{client}/images/upload-urls": {
+            "post": {
+                "description": "Get presigned URL for image upload",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Image"
+                ],
+                "summary": "Get presigned URL for image upload",
+                "parameters": [
+                    {
+                        "description": "image_type=(jpg|jpeg|png)",
+                        "name": "product",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/data.ImgUploadRequest"
+                        }
+                    },
+                    {
+                        "enum": [
+                            "customer",
+                            "merchant"
+                        ],
+                        "type": "string",
+                        "description": "client type",
+                        "name": "client",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/data.ImgUploadResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/data.BaseResponse"
                         }
