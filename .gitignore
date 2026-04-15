@@ -35,4 +35,4 @@ go.work.sum
 /server/resources/config-local.yml
 
 .vscode/*
-.DB_STORE
+**/.DS_Store
