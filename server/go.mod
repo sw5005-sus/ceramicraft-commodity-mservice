@@ -1,6 +1,6 @@
 module github.com/sw5005-sus/ceramicraft-commodity-mservice/server
 
-go 1.25.8
+go 1.25.9
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.39.2
@@ -25,7 +25,7 @@ require (
 require go.mongodb.org/mongo-driver/v2 v2.5.0 // indirect
 
 require (
-	filippo.io/edwards25519 v1.1.0 // indirect
+	filippo.io/edwards25519 v1.1.1 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.1 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.18.16 // indirect

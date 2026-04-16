@@ -3,10 +3,10 @@ package api
 import (
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/http/data"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/log"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/service"
-	"github.com/gin-gonic/gin"
 )
 
 // GetImageUploadPresignURL godoc
@@ -16,9 +16,10 @@ import (
 // @Accept json
 // @Produce json
 // @Param product body data.ImgUploadRequest true "image_type=(jpg|jpeg|png)"
+// @Param   client  path   string  true  "client type" Enums(customer, merchant)
 // @Success 200 {object} data.ImgUploadResponse
 // @Failure 400 {object} data.BaseResponse
-// @Router /merchant/images/upload-urls [post]
+// @Router /{client}/images/upload-urls [post]
 func GetImageUploadPresignURL(c *gin.Context) {
 	var req data.ImgUploadRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

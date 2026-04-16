@@ -171,6 +171,40 @@ info:
   title: 商品服务 API
   version: "1.0"
 paths:
+  /{client}/images/upload-urls:
+    post:
+      consumes:
+      - application/json
+      description: Get presigned URL for image upload
+      parameters:
+      - description: image_type=(jpg|jpeg|png)
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/data.ImgUploadRequest'
+      - description: client type
+        enum:
+        - customer
+        - merchant
+        in: path
+        name: client
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/data.ImgUploadResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/data.BaseResponse'
+      summary: Get presigned URL for image upload
+      tags:
+      - Image
   /customer/cart:
     get:
       consumes:
@@ -448,32 +482,6 @@ paths:
       summary: 用户端获取商品列表
       tags:
       - 商品
-  /merchant/images/upload-urls:
-    post:
-      consumes:
-      - application/json
-      description: Get presigned URL for image upload
-      parameters:
-      - description: image_type=(jpg|jpeg|png)
-        in: body
-        name: product
-        required: true
-        schema:
-          $ref: '#/definitions/data.ImgUploadRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/data.ImgUploadResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/data.BaseResponse'
-      summary: Get presigned URL for image upload
-      tags:
-      - Image
   /merchant/product/{id}:
     get:
       consumes:
