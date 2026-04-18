@@ -13,8 +13,8 @@ import (
 type ProductService interface {
 	Create(ctx context.Context, product *types.ProductInfo) (productId int, err error)
 	GetProductByID(ctx context.Context, id int) (productInfo *types.ProductInfo, err error)
-	PublishProduct(ctx context.Context, id int) error
-	UnpublishProduct(ctx context.Context, id int) error
+	PublishProduct(ctx context.Context, id int) (productName string, err error)
+	UnpublishProduct(ctx context.Context, id int) (productName string, err error)
 	ReviewSubmit(ctx context.Context, id int) error
 	ReviewReject(ctx context.Context, id int) error
 
@@ -23,7 +23,7 @@ type ProductService interface {
 	GetProductList(ctx context.Context, req types.GetProductListQuery) (list []*types.ProductInfo, count int, err error)
 
 	UpdateStockWithCAS(ctx context.Context, id int, deta int) error
-	UpdateProductInfo(ctx context.Context, req *types.UpdateProductInfoRequest) error
+	UpdateProductInfo(ctx context.Context, req *types.UpdateProductInfoRequest) (productName string, err error)
 }
 
 type ProductServiceImpl struct {
@@ -94,26 +94,26 @@ func (p *ProductServiceImpl) ReviewSubmit(ctx context.Context, id int) error {
 }
 
 // PublishProduct 上架商品
-func (p *ProductServiceImpl) PublishProduct(ctx context.Context, id int) error {
+func (p *ProductServiceImpl) PublishProduct(ctx context.Context, id int) (string, error) {
 	// 获取商品当前信息
 	product, err := p.checkAndGetProduct(ctx, id, ProductStatusUnderReview)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	userId := getUserId(ctx)
 	// 审核人跟编辑者不能是同一人
 	if product.LatestEditorId == userId {
-		return fmt.Errorf("the reviewer cannot be the same as the latest editor for product (ID: %d)", id)
+		return "", fmt.Errorf("the reviewer cannot be the same as the latest editor for product (ID: %d)", id)
 	}
 
 	product.LatestReviewerId = userId
 	err = p.updateProductStatus(ctx, id, product, ProductStatusPublished)
 	if err != nil {
-		return err
+		return "", err
 	}
 	log.Logger.Infof("Product (ID: %d) published successfully", id)
-	return nil
+	return product.Name, nil
 }
 
 // ReviewReject 驳回审核
@@ -138,19 +138,19 @@ func (p *ProductServiceImpl) ReviewReject(ctx context.Context, id int) error {
 }
 
 // UnpublishProduct 商品从上架状态变更为下架状态
-func (p *ProductServiceImpl) UnpublishProduct(ctx context.Context, id int) error {
+func (p *ProductServiceImpl) UnpublishProduct(ctx context.Context, id int) (string, error) {
 	// 获取商品当前信息
 	product, err := p.checkAndGetProduct(ctx, id, ProductStatusPublished)
 	if err != nil {
-		return err
+		return "", err
 	}
 	// 更新状态为已下架
 	err = p.updateProductStatus(ctx, id, product, ProductStatusUnpublished)
 	if err != nil {
-		return err
+		return "", err
 	}
 	log.Logger.Infof("Product (ID: %d) unpublished successfully", id)
-	return nil
+	return product.Name, nil
 }
 
 // checkAndGetProduct 获取商品并检查状态
@@ -278,20 +278,20 @@ func (p *ProductServiceImpl) UpdateStockWithCAS(ctx context.Context, id, deta in
 // 要求：
 // 1. 商品必须存在
 // 2. 商品必须处于下架状态
-func (p *ProductServiceImpl) UpdateProductInfo(ctx context.Context, req *types.UpdateProductInfoRequest) error {
+func (p *ProductServiceImpl) UpdateProductInfo(ctx context.Context, req *types.UpdateProductInfoRequest) (string, error) {
 	// 获取商品信息
 	product, err := p.productDao.GetProductByID(ctx, req.ID)
 	if err != nil {
 		log.Logger.Errorf("UpdateProductInfo: Failed to get product by ID: %v", err)
-		return err
+		return "", err
 	}
 	if product == nil {
-		return fmt.Errorf("product not found with ID: %d", req.ID)
+		return "", fmt.Errorf("product not found with ID: %d", req.ID)
 	}
 
 	// 检查商品状态
 	if product.Status != ProductStatusUnpublished {
-		return fmt.Errorf("cannot update product info for published product (ID: %d)", req.ID)
+		return "", fmt.Errorf("cannot update product info for published product (ID: %d)", req.ID)
 	}
 
 	// 构建更新的商品模型
@@ -317,10 +317,10 @@ func (p *ProductServiceImpl) UpdateProductInfo(ctx context.Context, req *types.U
 	err = p.productDao.UpdateProduct(ctx, updatedProduct)
 	if err != nil {
 		log.Logger.Errorf("UpdateProductInfo: Failed to update product: %v", err)
-		return err
+		return "", err
 	}
 
-	return nil
+	return req.Name, nil
 }
 
 func getUserId(ctx context.Context) int {

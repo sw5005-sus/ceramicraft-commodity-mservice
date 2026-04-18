@@ -28,6 +28,7 @@ func main() {
 	repository.Init()
 	utils.InitJwtSecret()
 	mq.Init()
+	defer mq.Close()
 	go grpc.Init(sigCh)
 	go http.Init(sigCh)
 	// listen terminage signal
