@@ -13,6 +13,7 @@ require (
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
 	github.com/sw5005-sus/ceramicraft-audit-client v0.0.1
+	github.com/sw5005-sus/ceramicraft-commodity-mservice/common v0.0.3
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.1
 	github.com/swaggo/swag v1.16.6
@@ -22,10 +23,7 @@ require (
 	gorm.io/gorm v1.31.0
 )
 
-require (
-	github.com/sw5005-sus/ceramicraft-commodity-mservice/common v0.0.3-alpha.4 // indirect
-	go.mongodb.org/mongo-driver/v2 v2.5.0 // indirect
-)
+require go.mongodb.org/mongo-driver/v2 v2.5.0 // indirect
 
 require (
 	filippo.io/edwards25519 v1.1.1 // indirect

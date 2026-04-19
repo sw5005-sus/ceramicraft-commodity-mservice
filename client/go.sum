@@ -16,6 +16,8 @@ github.com/sw5005-sus/ceramicraft-commodity-mservice/common v0.0.3-alpha.3 h1:Wc
 github.com/sw5005-sus/ceramicraft-commodity-mservice/common v0.0.3-alpha.3/go.mod h1:TrbiQ0BaNQXeTzyr4rYOQPe6RcuD6J5QDKJCKXqPa6A=
 github.com/sw5005-sus/ceramicraft-commodity-mservice/common v0.0.3-alpha.4 h1:1JuI4DznoE088H74xptY/1vKp4EKCH3m6nWkGoKgZsw=
 github.com/sw5005-sus/ceramicraft-commodity-mservice/common v0.0.3-alpha.4/go.mod h1:TrbiQ0BaNQXeTzyr4rYOQPe6RcuD6J5QDKJCKXqPa6A=
+github.com/sw5005-sus/ceramicraft-commodity-mservice/common v0.0.3 h1:wlq5sSrqngzYrIcf387H3b8iwMzuEnYVHGOnifTGZ1Q=
+github.com/sw5005-sus/ceramicraft-commodity-mservice/common v0.0.3/go.mod h1:TrbiQ0BaNQXeTzyr4rYOQPe6RcuD6J5QDKJCKXqPa6A=
 go.opentelemetry.io/auto/sdk v1.2.1 h1:jXsnJ4Lmnqd11kwkBV2LgLoFMZKizbCi5fNZ/ipaZ64=
 go.opentelemetry.io/auto/sdk v1.2.1/go.mod h1:KRTj+aOaElaLi+wW1kO/DZRXwkF4C5xPbEe3ZiIhN7Y=
 go.opentelemetry.io/otel v1.39.0 h1:8yPrr/S0ND9QEfTfdP9V+SiwT4E0G7Y5MO7p85nis48=
