@@ -543,6 +543,7 @@ func (x *CreateProductRequest) GetLatestEditorId() int32 {
 
 type CreateProductResponse struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
+	Base             *BaseResponse          `protobuf:"bytes,255,opt,name=base,proto3" json:"base,omitempty"`
 	Name             string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Category         string                 `protobuf:"bytes,2,opt,name=category,proto3" json:"category,omitempty"`
 	Price            int64                  `protobuf:"varint,3,opt,name=price,proto3" json:"price,omitempty"`
@@ -588,6 +589,13 @@ func (x *CreateProductResponse) ProtoReflect() protoreflect.Message {
 // Deprecated: Use CreateProductResponse.ProtoReflect.Descriptor instead.
 func (*CreateProductResponse) Descriptor() ([]byte, []int) {
 	return file_proto_product_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *CreateProductResponse) GetBase() *BaseResponse {
+	if x != nil {
+		return x.Base
+	}
+	return nil
 }
 
 func (x *CreateProductResponse) GetName() string {
@@ -721,8 +729,9 @@ const file_proto_product_proto_rawDesc = "" +
 	"\bcapacity\x18\n" +
 	" \x01(\tR\bcapacity\x12*\n" +
 	"\x10careInstructions\x18\v \x01(\tR\x10careInstructions\x12&\n" +
-	"\x0elatestEditorId\x18\f \x01(\x05R\x0elatestEditorId\"\xf5\x02\n" +
-	"\x15CreateProductResponse\x12\x12\n" +
+	"\x0elatestEditorId\x18\f \x01(\x05R\x0elatestEditorId\"\xa3\x03\n" +
+	"\x15CreateProductResponse\x12,\n" +
+	"\x04base\x18\xff\x01 \x01(\v2\x17.productpb.BaseResponseR\x04base\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1a\n" +
 	"\bcategory\x18\x02 \x01(\tR\bcategory\x12\x14\n" +
 	"\x05price\x18\x03 \x01(\x03R\x05price\x12\x12\n" +
@@ -780,17 +789,18 @@ var file_proto_product_proto_depIdxs = []int32{
 	1, // 0: productpb.UpdateStockWithCASResponse.base:type_name -> productpb.BaseResponse
 	1, // 1: productpb.GetProductListResponse.base:type_name -> productpb.BaseResponse
 	4, // 2: productpb.GetProductListResponse.products:type_name -> productpb.Product
-	2, // 3: productpb.ProductService.UpdateStockWithCAS:input_type -> productpb.UpdateStockWithCASRequest
-	5, // 4: productpb.ProductService.GetProductList:input_type -> productpb.GetProductListRequest
-	7, // 5: productpb.ProductService.CreateProduct:input_type -> productpb.CreateProductRequest
-	3, // 6: productpb.ProductService.UpdateStockWithCAS:output_type -> productpb.UpdateStockWithCASResponse
-	6, // 7: productpb.ProductService.GetProductList:output_type -> productpb.GetProductListResponse
-	8, // 8: productpb.ProductService.CreateProduct:output_type -> productpb.CreateProductResponse
-	6, // [6:9] is the sub-list for method output_type
-	3, // [3:6] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	1, // 3: productpb.CreateProductResponse.base:type_name -> productpb.BaseResponse
+	2, // 4: productpb.ProductService.UpdateStockWithCAS:input_type -> productpb.UpdateStockWithCASRequest
+	5, // 5: productpb.ProductService.GetProductList:input_type -> productpb.GetProductListRequest
+	7, // 6: productpb.ProductService.CreateProduct:input_type -> productpb.CreateProductRequest
+	3, // 7: productpb.ProductService.UpdateStockWithCAS:output_type -> productpb.UpdateStockWithCASResponse
+	6, // 8: productpb.ProductService.GetProductList:output_type -> productpb.GetProductListResponse
+	8, // 9: productpb.ProductService.CreateProduct:output_type -> productpb.CreateProductResponse
+	7, // [7:10] is the sub-list for method output_type
+	4, // [4:7] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_proto_product_proto_init() }

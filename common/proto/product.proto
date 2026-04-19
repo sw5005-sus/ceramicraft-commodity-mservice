@@ -69,6 +69,7 @@ message CreateProductRequest {
 }
 
 message CreateProductResponse {
+  BaseResponse base = 255;
   string name = 1;
   string category = 2;
   int64 price = 3;
