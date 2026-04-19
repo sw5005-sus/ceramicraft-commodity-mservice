@@ -422,6 +422,7 @@ type CreateProductRequest struct {
 	Weight           string                 `protobuf:"bytes,9,opt,name=weight,proto3" json:"weight,omitempty"`
 	Capacity         string                 `protobuf:"bytes,10,opt,name=capacity,proto3" json:"capacity,omitempty"`
 	CareInstructions string                 `protobuf:"bytes,11,opt,name=careInstructions,proto3" json:"careInstructions,omitempty"`
+	LatestEditorId   int32                  `protobuf:"varint,12,opt,name=latestEditorId,proto3" json:"latestEditorId,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -533,6 +534,13 @@ func (x *CreateProductRequest) GetCareInstructions() string {
 	return ""
 }
 
+func (x *CreateProductRequest) GetLatestEditorId() int32 {
+	if x != nil {
+		return x.LatestEditorId
+	}
+	return 0
+}
+
 type CreateProductResponse struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	Name             string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -547,6 +555,7 @@ type CreateProductResponse struct {
 	Capacity         string                 `protobuf:"bytes,10,opt,name=capacity,proto3" json:"capacity,omitempty"`
 	CareInstructions string                 `protobuf:"bytes,11,opt,name=careInstructions,proto3" json:"careInstructions,omitempty"`
 	Id               int64                  `protobuf:"varint,12,opt,name=id,proto3" json:"id,omitempty"`
+	LatestEditorId   int32                  `protobuf:"varint,13,opt,name=latestEditorId,proto3" json:"latestEditorId,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -665,6 +674,13 @@ func (x *CreateProductResponse) GetId() int64 {
 	return 0
 }
 
+func (x *CreateProductResponse) GetLatestEditorId() int32 {
+	if x != nil {
+		return x.LatestEditorId
+	}
+	return 0
+}
+
 var File_proto_product_proto protoreflect.FileDescriptor
 
 const file_proto_product_proto_rawDesc = "" +
@@ -689,7 +705,7 @@ const file_proto_product_proto_rawDesc = "" +
 	"\x03ids\x18\x01 \x03(\x03R\x03ids\"u\n" +
 	"\x16GetProductListResponse\x12+\n" +
 	"\x04base\x18\x01 \x01(\v2\x17.productpb.BaseResponseR\x04base\x12.\n" +
-	"\bproducts\x18\x02 \x03(\v2\x12.productpb.ProductR\bproducts\"\xbc\x02\n" +
+	"\bproducts\x18\x02 \x03(\v2\x12.productpb.ProductR\bproducts\"\xe4\x02\n" +
 	"\x14CreateProductRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1a\n" +
 	"\bcategory\x18\x02 \x01(\tR\bcategory\x12\x14\n" +
@@ -704,7 +720,8 @@ const file_proto_product_proto_rawDesc = "" +
 	"\x06weight\x18\t \x01(\tR\x06weight\x12\x1a\n" +
 	"\bcapacity\x18\n" +
 	" \x01(\tR\bcapacity\x12*\n" +
-	"\x10careInstructions\x18\v \x01(\tR\x10careInstructions\"\xcd\x02\n" +
+	"\x10careInstructions\x18\v \x01(\tR\x10careInstructions\x12&\n" +
+	"\x0elatestEditorId\x18\f \x01(\x05R\x0elatestEditorId\"\xf5\x02\n" +
 	"\x15CreateProductResponse\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1a\n" +
 	"\bcategory\x18\x02 \x01(\tR\bcategory\x12\x14\n" +
@@ -720,7 +737,8 @@ const file_proto_product_proto_rawDesc = "" +
 	"\bcapacity\x18\n" +
 	" \x01(\tR\bcapacity\x12*\n" +
 	"\x10careInstructions\x18\v \x01(\tR\x10careInstructions\x12\x0e\n" +
-	"\x02id\x18\f \x01(\x03R\x02id*|\n" +
+	"\x02id\x18\f \x01(\x03R\x02id\x12&\n" +
+	"\x0elatestEditorId\x18\r \x01(\x05R\x0elatestEditorId*|\n" +
 	"\fResponseCode\x12\v\n" +
 	"\aSUCCESS\x10\x00\x12\x13\n" +
 	"\x0eINTERNAL_ERROR\x10\xf4\x03\x12\x12\n" +

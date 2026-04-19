@@ -65,6 +65,7 @@ message CreateProductRequest {
   string weight = 9;
   string capacity = 10;
   string careInstructions = 11;
+  int32 latestEditorId = 12;
 }
 
 message CreateProductResponse {
@@ -80,4 +81,5 @@ message CreateProductResponse {
   string capacity = 10;
   string careInstructions = 11;
   int64 id = 12;
+  int32 latestEditorId = 13;
 }
