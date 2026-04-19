@@ -207,6 +207,10 @@ github.com/sw5005-sus/ceramicraft-commodity-mservice/common v0.0.2 h1:9s0PObFTYf
 github.com/sw5005-sus/ceramicraft-commodity-mservice/common v0.0.2/go.mod h1:VCN9fqkLTK9k7TDEPzMgw2GnhiE8IuUbKEnlzbNEOYE=
 github.com/sw5005-sus/ceramicraft-commodity-mservice/common v0.0.3-alpha.2 h1:9VaDtrDH+pdsF9JLDxCYEmFTz99gnEBDcPb9Qa6XMLc=
 github.com/sw5005-sus/ceramicraft-commodity-mservice/common v0.0.3-alpha.2/go.mod h1:TrbiQ0BaNQXeTzyr4rYOQPe6RcuD6J5QDKJCKXqPa6A=
+github.com/sw5005-sus/ceramicraft-commodity-mservice/common v0.0.3-alpha.3 h1:Wc7sHzqGtfH2vdDoaMqMfw+J4e6lzFvEiAknMBOp+A8=
+github.com/sw5005-sus/ceramicraft-commodity-mservice/common v0.0.3-alpha.3/go.mod h1:TrbiQ0BaNQXeTzyr4rYOQPe6RcuD6J5QDKJCKXqPa6A=
+github.com/sw5005-sus/ceramicraft-commodity-mservice/common v0.0.3-alpha.4 h1:1JuI4DznoE088H74xptY/1vKp4EKCH3m6nWkGoKgZsw=
+github.com/sw5005-sus/ceramicraft-commodity-mservice/common v0.0.3-alpha.4/go.mod h1:TrbiQ0BaNQXeTzyr4rYOQPe6RcuD6J5QDKJCKXqPa6A=
 github.com/sw5005-sus/ceramicraft-user-mservice/common v0.0.14 h1:ALUnCeVFyLFpPu+rRkCJMTf45aGXF7Vn278kQBtKG3g=
 github.com/sw5005-sus/ceramicraft-user-mservice/common v0.0.14/go.mod h1:MPvwfr2NGPV5yFhfih7NK26tsOceHl70lkdB+0yPILI=
 github.com/swaggo/files v1.0.1 h1:J1bVJ4XHZNq0I46UU90611i9/YzdrF7x92oX1ig5IdE=

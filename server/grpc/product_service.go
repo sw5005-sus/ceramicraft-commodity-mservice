@@ -76,14 +76,24 @@ func (p *ProductService) CreateProduct(ctx context.Context, req *productpb.Creat
 		Capacity:         req.Capacity,
 		CareInstructions: req.CareInstructions,
 	}
-	id, err := service.GetProductServiceInstance().Create(ctx, productInfo)
+	valueCtx := context.WithValue(ctx, types.UserIDKey, int(req.LatestEditorId))
+	id, err := service.GetProductServiceInstance().Create(valueCtx, productInfo)
 	if err != nil {
 		log.Logger.Errorf("failed to create product, err: %v", err)
-		return nil, err
+		return &productpb.CreateProductResponse{
+			Base: &productpb.BaseResponse{
+				Code: int32(productpb.ResponseCode_INTERNAL_ERROR),
+				Msg:  productpb.ResponseCode_name[int32(productpb.ResponseCode_INTERNAL_ERROR)],
+			},
+		}, err
 	}
 	log.Logger.Infof("successfully created product, id: %d", id)
 
 	return &productpb.CreateProductResponse{
+		Base: &productpb.BaseResponse{
+			Code: int32(productpb.ResponseCode_SUCCESS),
+			Msg:  productpb.ResponseCode_name[int32(productpb.ResponseCode_SUCCESS)],
+		},
 		Id:               int64(id),
 		Name:             req.Name,
 		Stock:            req.Stock,
@@ -96,5 +106,6 @@ func (p *ProductService) CreateProduct(ctx context.Context, req *productpb.Creat
 		Weight:           req.Weight,
 		Capacity:         req.Capacity,
 		CareInstructions: req.CareInstructions,
+		LatestEditorId:   req.LatestEditorId,
 	}, nil
 }

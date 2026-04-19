@@ -23,7 +23,7 @@ require (
 )
 
 require (
-	github.com/sw5005-sus/ceramicraft-commodity-mservice/common v0.0.3-alpha.2 // indirect
+	github.com/sw5005-sus/ceramicraft-commodity-mservice/common v0.0.3-alpha.4 // indirect
 	go.mongodb.org/mongo-driver/v2 v2.5.0 // indirect
 )
 

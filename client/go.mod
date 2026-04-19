@@ -5,7 +5,7 @@ go 1.25.9
 require google.golang.org/grpc v1.79.3
 
 require (
-	github.com/sw5005-sus/ceramicraft-commodity-mservice/common v0.0.3-alpha.2
+	github.com/sw5005-sus/ceramicraft-commodity-mservice/common v0.0.3-alpha.4
 	golang.org/x/net v0.48.0 // indirect
 	golang.org/x/sys v0.39.0 // indirect
 	golang.org/x/text v0.32.0 // indirect
