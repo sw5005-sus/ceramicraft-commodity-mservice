@@ -2,12 +2,10 @@ module github.com/sw5005-sus/ceramicraft-commodity-mservice/client
 
 go 1.25.9
 
-require (
-	github.com/sw5005-sus/ceramicraft-commodity-mservice/common v0.0.2
-	google.golang.org/grpc v1.79.3
-)
+require google.golang.org/grpc v1.79.3
 
 require (
+	github.com/sw5005-sus/ceramicraft-commodity-mservice/common v0.0.3
 	golang.org/x/net v0.48.0 // indirect
 	golang.org/x/sys v0.39.0 // indirect
 	golang.org/x/text v0.32.0 // indirect
