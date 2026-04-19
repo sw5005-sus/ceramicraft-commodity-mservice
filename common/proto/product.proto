@@ -23,6 +23,7 @@ message BaseResponse {
 service ProductService {
   rpc UpdateStockWithCAS (UpdateStockWithCASRequest) returns (UpdateStockWithCASResponse);
   rpc GetProductList (GetProductListRequest) returns (GetProductListResponse); 
+  rpc CreateProduct (CreateProductRequest) returns (CreateProductResponse);
 }
 
 message UpdateStockWithCASRequest {
@@ -50,4 +51,33 @@ message GetProductListRequest {
 message GetProductListResponse {
     BaseResponse base = 1;           // 基础响应信息
     repeated Product products = 2;    // 商品列表
+}
+
+message CreateProductRequest {
+  string name = 1;
+  string category = 2;
+  int64 price = 3;
+  string desc = 4;
+  int64 stock = 5;
+  string picInfo = 6;
+  string dimensions = 7;
+  string material = 8;
+  string weight = 9;
+  string capacity = 10;
+  string careInstructions = 11;
+}
+
+message CreateProductResponse {
+  string name = 1;
+  string category = 2;
+  int64 price = 3;
+  string desc = 4;
+  int64 stock = 5;
+  string picInfo = 6;
+  string dimensions = 7;
+  string material = 8;
+  string weight = 9;
+  string capacity = 10;
+  string careInstructions = 11;
+  int64 id = 12;
 }
