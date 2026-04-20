@@ -3,11 +3,14 @@ package router
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 
 	auditclient "github.com/sw5005-sus/ceramicraft-audit-client"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/config"
 	_ "github.com/sw5005-sus/ceramicraft-commodity-mservice/server/docs"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/http/api"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/http/data"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/log"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/metrics"
 	"github.com/sw5005-sus/ceramicraft-user-mservice/common/middleware"
 	swaggerFiles "github.com/swaggo/files"
@@ -42,7 +45,7 @@ func NewRouter() *gin.Engine {
 
 		merchantRouter := baseRouter.Group("/merchant")
 		{
-			merchantRouter.Use(middleware.AuthMiddleware())
+			merchantRouter.Use(otelgin.Middleware(data.ServiceName), log.TraceLoggerMiddleware(), middleware.AuthMiddleware())
 			merchantRouter.POST("/products", middleware.RequireRoles("merchant_admin", "product_editor"), auditMiddleware, api.AddProduct)
 			merchantRouter.GET("/product/:id", api.GetProductMerchant)
 			merchantRouter.PATCH("/products/:id/status", middleware.RequireRoles("merchant_admin", "product_editor"), auditMiddleware, api.UpdateProductStatus)
@@ -55,6 +58,7 @@ func NewRouter() *gin.Engine {
 
 		customerRouter := baseRouter.Group("/customer")
 		{
+			customerRouter.Use(otelgin.Middleware(data.ServiceName), log.TraceLoggerMiddleware())
 			customerRouter.GET("/products", api.GetCustomerProductList)
 			customerRouter.GET("/product/:id", api.GetProductCustomer)
 

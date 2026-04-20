@@ -23,13 +23,13 @@ import (
 func GetImageUploadPresignURL(c *gin.Context) {
 	var req data.ImgUploadRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Logger.Errorf("GetImageUploadPresignURL: Invalid request body: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("GetImageUploadPresignURL: Invalid request body: %v", err)
 		c.JSON(http.StatusBadRequest, data.ResponseFailed(err.Error()))
 		return
 	}
 	ret, err := service.GetImageService().GenUploadURL(c.Request.Context(), req.ImageType)
 	if err != nil {
-		log.Logger.Errorf("GetImageUploadPresignURL: Failed to generate upload url: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("GetImageUploadPresignURL: Failed to generate upload url: %v", err)
 		c.JSON(http.StatusInternalServerError, data.ResponseFailed("Failed to generate image uplaod url"))
 		return
 	}

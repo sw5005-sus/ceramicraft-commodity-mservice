@@ -42,10 +42,10 @@ type ShoppingCartItemDaoImpl struct {
 func (s *ShoppingCartItemDaoImpl) DeleteByProductIds(ctx context.Context, userId int, productIds []int) error {
 	ret := s.db.WithContext(ctx).Where("user_id = ? AND product_id IN ?", userId, productIds).Delete(&model.ShoppingCartItem{})
 	if ret.Error != nil {
-		log.Logger.Errorf("ShoppingCartItemDao: DeleteByProductIds: Failed to delete items: %v", ret.Error)
+		log.WithContext(ctx).Errorf("ShoppingCartItemDao: DeleteByProductIds: Failed to delete items: %v", ret.Error)
 		return ret.Error
 	}
-	log.Logger.Infof("ShoppingCartItemDao: DeleteByProductIds: Deleted %d items for user ID %d", ret.RowsAffected, userId)
+	log.WithContext(ctx).Infof("ShoppingCartItemDao: DeleteByProductIds: Deleted %d items for user ID %d", ret.RowsAffected, userId)
 	return nil
 }
 
@@ -53,10 +53,10 @@ func (s *ShoppingCartItemDaoImpl) DeleteByProductIds(ctx context.Context, userId
 func (s *ShoppingCartItemDaoImpl) CreateItem(ctx context.Context, item *model.ShoppingCartItem) (itemId int, err error) {
 	ret := s.db.WithContext(ctx).Create(item)
 	if ret.Error != nil {
-		log.Logger.Errorf("ShoppingCartItemDao: CreateItem: Failed to create item: %v", ret.Error)
+		log.WithContext(ctx).Errorf("ShoppingCartItemDao: CreateItem: Failed to create item: %v", ret.Error)
 		return -1, ret.Error
 	}
-	log.Logger.Infof("ShoppingCartItemDao: CreateItem: Created item with ID %d", item.ID)
+	log.WithContext(ctx).Infof("ShoppingCartItemDao: CreateItem: Created item with ID %d", item.ID)
 	return item.ID, nil
 }
 
@@ -64,14 +64,14 @@ func (s *ShoppingCartItemDaoImpl) CreateItem(ctx context.Context, item *model.Sh
 func (s *ShoppingCartItemDaoImpl) DeleteItemById(ctx context.Context, id int, userId int) error {
 	ret := s.db.WithContext(ctx).Delete(&model.ShoppingCartItem{ID: id, UserID: userId})
 	if ret.Error != nil {
-		log.Logger.Errorf("ShoppingCartItemDao: DeleteItem: Failed to delete item: %v", ret.Error)
+		log.WithContext(ctx).Errorf("ShoppingCartItemDao: DeleteItem: Failed to delete item: %v", ret.Error)
 		return ret.Error
 	}
 	if ret.RowsAffected == 0 {
-		log.Logger.Warnf("ShoppingCartItemDao: DeleteItem: No item found with ID %d to delete", id)
+		log.WithContext(ctx).Warnf("ShoppingCartItemDao: DeleteItem: No item found with ID %d to delete", id)
 		return nil
 	}
-	log.Logger.Infof("ShoppingCartItemDao: DeleteItem: Deleted item with ID %d", id)
+	log.WithContext(ctx).Infof("ShoppingCartItemDao: DeleteItem: Deleted item with ID %d", id)
 	return nil
 }
 
@@ -80,10 +80,10 @@ func (s *ShoppingCartItemDaoImpl) GetItemById(ctx context.Context, id int) (item
 	ret := s.db.WithContext(ctx).First(&item, id)
 	if ret.Error != nil {
 		if errors.Is(ret.Error, gorm.ErrRecordNotFound) {
-			log.Logger.Warnf("ShoppingCartItemDao: GetItemById: No item found with ID %d", id)
+			log.WithContext(ctx).Warnf("ShoppingCartItemDao: GetItemById: No item found with ID %d", id)
 			return nil, nil
 		} else {
-			log.Logger.Errorf("ShoppingCartItemDao: GetItemById: Failed to get item: %v", ret.Error)
+			log.WithContext(ctx).Errorf("ShoppingCartItemDao: GetItemById: Failed to get item: %v", ret.Error)
 			return nil, ret.Error
 		}
 	}
@@ -94,7 +94,7 @@ func (s *ShoppingCartItemDaoImpl) GetItemById(ctx context.Context, id int) (item
 func (s *ShoppingCartItemDaoImpl) QueryItems(ctx context.Context, query *model.ShoppingCartItem) (item []*model.ShoppingCartItem, err error) {
 	ret := s.db.WithContext(ctx).Where(query).Find(&item)
 	if ret.Error != nil {
-		log.Logger.Errorf("ShoppingCartItemDao: GetItemByUserId: Failed to get items: %v", ret.Error)
+		log.WithContext(ctx).Errorf("ShoppingCartItemDao: GetItemByUserId: Failed to get items: %v", ret.Error)
 		return nil, ret.Error
 	}
 	return item, nil
@@ -104,11 +104,11 @@ func (s *ShoppingCartItemDaoImpl) QueryItems(ctx context.Context, query *model.S
 func (s *ShoppingCartItemDaoImpl) UpdateItem(ctx context.Context, item *model.ShoppingCartItem) error {
 	ret := s.db.WithContext(ctx).Save(item)
 	if ret.Error != nil {
-		log.Logger.Errorf("ShoppingCartItemDao: UpdateItem: Failed to update item: %v", ret.Error)
+		log.WithContext(ctx).Errorf("ShoppingCartItemDao: UpdateItem: Failed to update item: %v", ret.Error)
 		return ret.Error
 	}
 	if ret.RowsAffected == 0 {
-		log.Logger.Warnf("ShoppingCartItemDao: UpdateItem: No item found with ID %d to update", item.ID)
+		log.WithContext(ctx).Warnf("ShoppingCartItemDao: UpdateItem: No item found with ID %d to update", item.ID)
 		return nil
 	}
 	return nil

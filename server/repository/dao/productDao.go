@@ -50,7 +50,7 @@ func GetProductDao() *ProductDaoImpl {
 func (p *ProductDaoImpl) CreateProduct(ctx context.Context, product *model.Product) (int, error) {
 	result := p.db.WithContext(ctx).Create(product)
 	if result.Error != nil {
-		log.Logger.Errorf("Failed to create product: %v", result.Error)
+		log.WithContext(ctx).Errorf("Failed to create product: %v", result.Error)
 		return 0, result.Error
 	}
 	return int(product.ID), nil
@@ -60,12 +60,12 @@ func (p *ProductDaoImpl) CreateProduct(ctx context.Context, product *model.Produ
 func (p *ProductDaoImpl) UpdateProduct(ctx context.Context, product *model.Product) error {
 	result := p.db.WithContext(ctx).Model(&model.Product{}).Where("id = ?", product.ID).Updates(product)
 	if result.Error != nil {
-		log.Logger.Errorf("Failed to update product ID %d: %v", product.ID, result.Error)
+		log.WithContext(ctx).Errorf("Failed to update product ID %d: %v", product.ID, result.Error)
 		return result.Error
 	}
 	if result.RowsAffected == 0 {
 		err := fmt.Errorf("product not found with ID: %d", product.ID)
-		log.Logger.Error(err)
+		log.WithContext(ctx).Error(err)
 		return err
 	}
 	return nil
@@ -81,7 +81,7 @@ func (p *ProductDaoImpl) UpdateStockWithCAS(ctx context.Context, id, version, ne
 			"version":          gorm.Expr("version + 1"),
 		})
 	if ret.Error != nil {
-		log.Logger.Errorf("Failed to update product ID %d: %v", id, ret.Error)
+		log.WithContext(ctx).Errorf("Failed to update product ID %d: %v", id, ret.Error)
 		return ret.Error
 	}
 	return nil
@@ -92,7 +92,7 @@ func (p *ProductDaoImpl) GetProductByID(ctx context.Context, id int) (*model.Pro
 	var product model.Product
 	result := p.db.WithContext(ctx).Where("id = ?", id).First(&product)
 	if result.Error != nil {
-		log.Logger.Errorf("Failed to get product by ID %d: %v", id, result.Error)
+		log.WithContext(ctx).Errorf("Failed to get product by ID %d: %v", id, result.Error)
 		return nil, result.Error
 	}
 	return &product, nil
@@ -102,7 +102,7 @@ func (p *ProductDaoImpl) GetProductByIDs(ctx context.Context, ids []int) ([]*mod
 	var products []*model.Product
 	result := p.db.WithContext(ctx).Where("id IN ?", ids).Find(&products)
 	if result.Error != nil {
-		log.Logger.Errorf("Failed to get products by IDs %v: %v", ids, result.Error)
+		log.WithContext(ctx).Errorf("Failed to get products by IDs %v: %v", ids, result.Error)
 		return nil, result.Error
 	}
 	return products, nil
@@ -117,12 +117,12 @@ func (p *ProductDaoImpl) UpdateProductStock(ctx context.Context, id int, stock i
 			"latest_editor_id": editorId,
 		})
 	if result.Error != nil {
-		log.Logger.Errorf("Failed to update product stock, ID: %d, stock: %d, error: %v", id, stock, result.Error)
+		log.WithContext(ctx).Errorf("Failed to update product stock, ID: %d, stock: %d, error: %v", id, stock, result.Error)
 		return result.Error
 	}
 	if result.RowsAffected == 0 {
 		err := fmt.Errorf("product not found with ID: %d", id)
-		log.Logger.Error(err)
+		log.WithContext(ctx).Error(err)
 		return err
 	}
 	return nil
@@ -161,13 +161,13 @@ func (p *ProductDaoImpl) ListProduct(ctx context.Context, q ListProductQuery) ([
 	// 获取总数
 	err := query.Count(&total).Error
 	if err != nil {
-		log.Logger.Errorf("Failed to count products: %v", err)
+		log.WithContext(ctx).Errorf("Failed to count products: %v", err)
 		return nil, 0, err
 	}
 
 	err = query.Offset(q.Offset).Limit(q.Limit).Find(&products).Error
 	if err != nil {
-		log.Logger.Errorf("Failed to get products ordered by time: %v", err)
+		log.WithContext(ctx).Errorf("Failed to get products ordered by time: %v", err)
 		return nil, 0, err
 	}
 
@@ -181,12 +181,12 @@ func (p *ProductDaoImpl) UpdateProductStatus(ctx context.Context, id, fromStatus
 		Select("status", "latest_reviewer_id").
 		Updates(product)
 	if result.Error != nil {
-		log.Logger.Errorf("Failed to update product status, ID: %d, status: %d, error: %v", id, product.Status, result.Error)
+		log.WithContext(ctx).Errorf("Failed to update product status, ID: %d, status: %d, error: %v", id, product.Status, result.Error)
 		return result.Error
 	}
 	if result.RowsAffected == 0 {
 		err := fmt.Errorf("product not found with ID: %d", id)
-		log.Logger.Error(err)
+		log.WithContext(ctx).Error(err)
 		return err
 	}
 	return nil

@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gin-gonic/gin"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/http/data"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/log"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/service"
-	"github.com/gin-gonic/gin"
 )
 
 // CreateCartItem godoc
@@ -25,13 +25,13 @@ import (
 func CreateCartItem(c *gin.Context) {
 	var req data.CartItemBasicVO
 	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Logger.Errorf("CreateCartItem: Invalid request body: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("CreateCartItem: Invalid request body: %v", err)
 		c.JSON(http.StatusBadRequest, data.ResponseFailed(err.Error()))
 		return
 	}
 	userID, exists := c.Get("userID")
 	if !exists {
-		log.Logger.Error("CreateCartItem: User ID not found in context")
+		log.WithContext(c.Request.Context()).Error("CreateCartItem: User ID not found in context")
 		c.JSON(http.StatusUnauthorized, data.ResponseFailed("User not authenticated"))
 		return
 	}
@@ -43,11 +43,11 @@ func CreateCartItem(c *gin.Context) {
 		return
 	}
 	if bizErr.Code == service.ProductCheckStatus_DBError {
-		log.Logger.Errorf("CreateCartItem: Failed to add cart item: %v", bizErr)
+		log.WithContext(c.Request.Context()).Errorf("CreateCartItem: Failed to add cart item: %v", bizErr)
 		c.JSON(http.StatusInternalServerError, data.ResponseFailed("Failed to add cart item"))
 		return
 	}
-	log.Logger.Errorf("CreateCartItem: Failed to add cart item: %v", bizErr)
+	log.WithContext(c.Request.Context()).Errorf("CreateCartItem: Failed to add cart item: %v", bizErr)
 	c.JSON(http.StatusBadRequest, data.ResponseFailed(bizErr.Message))
 }
 
@@ -66,13 +66,13 @@ func CreateCartItem(c *gin.Context) {
 func UpdateCartItem(c *gin.Context) {
 	var req data.CartItemBasicVO
 	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Logger.Errorf("UpdateCartItem: Invalid request body: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("UpdateCartItem: Invalid request body: %v", err)
 		c.JSON(http.StatusBadRequest, data.ResponseFailed(err.Error()))
 		return
 	}
 	userID, exists := c.Get("userID")
 	if !exists {
-		log.Logger.Error("UpdateCartItem: User ID not found in context")
+		log.WithContext(c.Request.Context()).Error("UpdateCartItem: User ID not found in context")
 		c.JSON(http.StatusUnauthorized, data.ResponseFailed("User not authenticated"))
 		return
 	}
@@ -80,13 +80,13 @@ func UpdateCartItem(c *gin.Context) {
 	itemId := c.Param("item_id")
 	id, err := strconv.Atoi(itemId)
 	if err != nil {
-		log.Logger.Errorf("UpdateCartItem: Invalid item_id parameter: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("UpdateCartItem: Invalid item_id parameter: %v", err)
 		c.JSON(http.StatusBadRequest, data.ResponseFailed("Invalid item_id parameter"))
 		return
 	}
 	req.ID = id
 	if req.ID <= 0 {
-		log.Logger.Errorf("UpdateCartItem: item_id must be positive")
+		log.WithContext(c.Request.Context()).Errorf("UpdateCartItem: item_id must be positive")
 		c.JSON(http.StatusBadRequest, data.ResponseFailed("illegal item_id parameter"))
 		return
 	}
@@ -96,11 +96,11 @@ func UpdateCartItem(c *gin.Context) {
 		return
 	}
 	if bizErr.Code == service.ProductCheckStatus_DBError {
-		log.Logger.Errorf("UpdateCartItem: Failed to update cart item: %v", bizErr)
+		log.WithContext(c.Request.Context()).Errorf("UpdateCartItem: Failed to update cart item: %v", bizErr)
 		c.JSON(http.StatusInternalServerError, data.ResponseFailed("Failed to update cart item"))
 		return
 	}
-	log.Logger.Errorf("UpdateCartItem: Failed to update cart item: %v", bizErr)
+	log.WithContext(c.Request.Context()).Errorf("UpdateCartItem: Failed to update cart item: %v", bizErr)
 	c.JSON(http.StatusBadRequest, data.ResponseFailed(bizErr.Message))
 }
 
@@ -120,25 +120,25 @@ func DeleteCartItem(c *gin.Context) {
 	itemId := c.Param("item_id")
 	id, err := strconv.Atoi(itemId)
 	if err != nil {
-		log.Logger.Errorf("UpdateCartItem: Invalid item_id parameter: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("UpdateCartItem: Invalid item_id parameter: %v", err)
 		c.JSON(http.StatusBadRequest, data.ResponseFailed("Invalid item_id parameter"))
 		return
 	}
 	if id <= 0 {
-		log.Logger.Errorf("DeleteCartItem: item_id must be positive")
+		log.WithContext(c.Request.Context()).Errorf("DeleteCartItem: item_id must be positive")
 		c.JSON(http.StatusBadRequest, data.ResponseFailed("illegal item_id parameter"))
 		return
 	}
 	userID, exists := c.Get("userID")
 	if !exists {
-		log.Logger.Error("DeleteCartItem: User ID not found in context")
+		log.WithContext(c.Request.Context()).Error("DeleteCartItem: User ID not found in context")
 		c.JSON(http.StatusUnauthorized, data.ResponseFailed("User not authenticated"))
 		return
 	}
 	userId := userID.(int)
 	err = service.GetCartService().DeleteItem(c.Request.Context(), id, userId)
 	if err != nil {
-		log.Logger.Errorf("DeleteCartItem: Failed to delete cart item: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("DeleteCartItem: Failed to delete cart item: %v", err)
 		c.JSON(http.StatusInternalServerError, data.ResponseFailed("Failed to delete cart item"))
 		return
 	}
@@ -159,15 +159,15 @@ func DeleteCartItem(c *gin.Context) {
 func GetUserCartInfo(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
-		log.Logger.Error("GetUserCartItemList: User ID not found in context")
+		log.WithContext(c.Request.Context()).Error("GetUserCartItemList: User ID not found in context")
 		c.JSON(http.StatusUnauthorized, data.ResponseFailed("User not authenticated"))
 		return
 	}
 	userID = userID.(int)
-	log.Logger.Infof("GetUserCartInfo: userID=%d", userID)
+	log.WithContext(c.Request.Context()).Infof("GetUserCartInfo: userID=%d", userID)
 	ret, err := service.GetCartService().GetCartItems(c.Request.Context(), userID.(int))
 	if err != nil {
-		log.Logger.Errorf("GetUserCartInfo: Failed to get cart items: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("GetUserCartInfo: Failed to get cart items: %v", err)
 		c.JSON(http.StatusInternalServerError, data.ResponseFailed("Failed to get cart items"))
 		return
 	}
@@ -187,15 +187,15 @@ func GetUserCartInfo(c *gin.Context) {
 func GetCartSelctedNum(c *gin.Context) {
 	userID, exists := c.Get("userID")
 	if !exists {
-		log.Logger.Error("GetCartSelctedNum: User ID not found in context")
+		log.WithContext(c.Request.Context()).Error("GetCartSelctedNum: User ID not found in context")
 		c.JSON(http.StatusUnauthorized, data.ResponseFailed("User not authenticated"))
 		return
 	}
 	userId := userID.(int)
-	log.Logger.Infof("GetCartSelctedNum: userID=%d", userId)
+	log.WithContext(c.Request.Context()).Infof("GetCartSelctedNum: userID=%d", userId)
 	ret, err := service.GetCartService().GetCartSelectedItemCnt(c.Request.Context(), userId)
 	if err != nil {
-		log.Logger.Errorf("GetCartSelctedNum: Failed to get selected item count: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("GetCartSelctedNum: Failed to get selected item count: %v", err)
 		c.JSON(http.StatusInternalServerError, data.ResponseFailed("Failed to get selected item count"))
 		return
 	}
@@ -219,10 +219,10 @@ func GetEstimatePrice(c *gin.Context) {
 		return
 	}
 	userIdInt := userId.(int)
-	log.Logger.Infof("CalOrderPrice: userID=%d", userIdInt)
+	log.WithContext(c.Request.Context()).Infof("CalOrderPrice: userID=%d", userIdInt)
 	ret, err := service.GetCartService().EstimatePrice(c.Request.Context(), userIdInt)
 	if err != nil {
-		log.Logger.Errorf("CalOrderPrice: Failed to estimate price: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("CalOrderPrice: Failed to estimate price: %v", err)
 		c.JSON(http.StatusInternalServerError, data.ResponseFailed("Failed to estimate price"))
 		return
 	}
