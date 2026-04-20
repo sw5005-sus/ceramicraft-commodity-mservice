@@ -12,6 +12,7 @@ import (
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/metrics"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/mq"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/repository"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/telemetry"
 	"github.com/sw5005-sus/ceramicraft-user-mservice/common/utils"
 )
 
@@ -28,6 +29,12 @@ func main() {
 	repository.Init()
 	utils.InitJwtSecret()
 	mq.Init()
+	shutdownTrace := telemetry.InitTracer()
+	log.Logger.Info("Tracing initialized.")
+	defer shutdownTrace()
+	shutdownMetrics := telemetry.InitMetrics()
+	log.Logger.Info("Metrics initialized.")
+	defer shutdownMetrics()
 	go grpc.Init(sigCh)
 	go http.Init(sigCh)
 	// listen terminage signal

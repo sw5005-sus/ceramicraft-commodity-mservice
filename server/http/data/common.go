@@ -5,6 +5,10 @@ const (
 	CodeFailed  = 500
 )
 
+const (
+	ServiceName = "product-ms"
+)
+
 type BaseResponse struct {
 	Code   int         `json:"code"`
 	ErrMsg string      `json:"err_msg,omitempty"`
