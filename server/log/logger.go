@@ -34,6 +34,17 @@ func InitLogger() {
 
 type ctxKey struct{}
 
+func WithContext(ctx context.Context) *zap.SugaredLogger {
+	if ctx == nil {
+		return Logger
+	}
+	if l, ok := ctx.Value(ctxKey{}).(*zap.SugaredLogger); ok && l != nil {
+		fmt.Println("logger found in context, will use it")
+		return l
+	}
+	return Logger
+}
+
 func TraceLoggerMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		span := trace.SpanFromContext(c.Request.Context())
@@ -41,7 +52,6 @@ func TraceLoggerMiddleware() gin.HandlerFunc {
 
 		logger := Logger
 		if sc.IsValid() {
-			fmt.Println("span valid, will log with trace")
 			logger = Logger.With(
 				"trace_id", sc.TraceID().String(),
 				"span_id", sc.SpanID().String(),

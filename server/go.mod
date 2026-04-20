@@ -14,7 +14,6 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/sw5005-sus/ceramicraft-audit-client v0.0.1
 	github.com/sw5005-sus/ceramicraft-commodity-mservice/common v0.0.3
-	github.com/sw5005-sus/ceramicraft-user-mservice/server v0.0.0-20260416151522-a5ad2d7e8e35
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.1
 	github.com/swaggo/swag v1.16.6

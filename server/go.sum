@@ -212,8 +212,6 @@ github.com/sw5005-sus/ceramicraft-commodity-mservice/common v0.0.3 h1:wlq5sSrqng
 github.com/sw5005-sus/ceramicraft-commodity-mservice/common v0.0.3/go.mod h1:TrbiQ0BaNQXeTzyr4rYOQPe6RcuD6J5QDKJCKXqPa6A=
 github.com/sw5005-sus/ceramicraft-user-mservice/common v0.0.15 h1:qQQ0IvBRMC9n3XvLtvfNEXPOOkKo9qvsUf6Oej43EgQ=
 github.com/sw5005-sus/ceramicraft-user-mservice/common v0.0.15/go.mod h1:MPvwfr2NGPV5yFhfih7NK26tsOceHl70lkdB+0yPILI=
-github.com/sw5005-sus/ceramicraft-user-mservice/server v0.0.0-20260416151522-a5ad2d7e8e35 h1:PD6i+DMnhuGbx6tq+nyaJFjGGmFsxTKhsUCDLHn8YqE=
-github.com/sw5005-sus/ceramicraft-user-mservice/server v0.0.0-20260416151522-a5ad2d7e8e35/go.mod h1:qSVxG0RzhOu4vII0mxt3s8awmwVWnzHziyYZA49BqOM=
 github.com/swaggo/files v1.0.1 h1:J1bVJ4XHZNq0I46UU90611i9/YzdrF7x92oX1ig5IdE=
 github.com/swaggo/files v1.0.1/go.mod h1:0qXmMNH6sXNf+73t65aKeB+ApmgxdnkQzVTAj2uaMUg=
 github.com/swaggo/gin-swagger v1.6.1 h1:Ri06G4gc9N4t4k8hekMigJ9zKTFSlqj/9paAQCQs7cY=

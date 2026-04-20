@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/sw5005-sus/ceramicraft-user-mservice/server/http/data"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/http/data"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -77,7 +77,6 @@ func InitMetrics() func() {
 		ctx,
 		resource.WithAttributes(
 			semconv.ServiceName(data.ServiceName),
-			semconv.ServiceVersion("1.0.0"),
 		),
 	)
 	if err != nil {

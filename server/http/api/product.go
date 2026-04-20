@@ -26,19 +26,19 @@ import (
 func AddProduct(c *gin.Context) {
 	var req types.ProductInfo
 	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Logger.Errorf("AddProduct: Invalid request body: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("AddProduct: Invalid request body: %v", err)
 		c.JSON(http.StatusBadRequest, data.ResponseFailed(err.Error()))
 		return
 	}
 	ctx, err := createCtxWithUserID(c)
 	if err != nil {
-		log.Logger.Errorf("AddProduct: Failed to create context with user ID: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("AddProduct: Failed to create context with user ID: %v", err)
 		c.JSON(http.StatusUnauthorized, data.ResponseFailed("UserID needed from the context"))
 		return
 	}
 	productId, err := service.GetProductServiceInstance().Create(ctx, &req)
 	if err != nil {
-		log.Logger.Errorf("AddProduct: Failed to create product: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("AddProduct: Failed to create product: %v", err)
 		c.JSON(http.StatusInternalServerError, data.ResponseFailed("Failed to create product"))
 		return
 	}
@@ -62,7 +62,7 @@ func GetProductMerchant(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		log.Logger.Errorf("GetProduct: Invalid product ID: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("GetProduct: Invalid product ID: %v", err)
 		c.JSON(http.StatusBadRequest, data.ResponseFailed("Invalid product ID"))
 		return
 	}
@@ -70,7 +70,7 @@ func GetProductMerchant(c *gin.Context) {
 	// 调用 service 层获取商品信息
 	product, err := service.GetProductServiceInstance().GetProductByID(c.Request.Context(), id)
 	if err != nil {
-		log.Logger.Errorf("GetProduct: Failed to get product details: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("GetProduct: Failed to get product details: %v", err)
 		c.JSON(http.StatusInternalServerError, data.ResponseFailed("Failed to get product details"))
 		return
 	}
@@ -101,20 +101,20 @@ func UpdateProductStatus(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		log.Logger.Errorf("GetProduct: Invalid product ID: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("GetProduct: Invalid product ID: %v", err)
 		c.JSON(http.StatusBadRequest, data.ResponseFailed("Invalid product ID"))
 		return
 	}
 
 	var req types.UpdateProductStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Logger.Errorf("PublishProduct: Invalid request body: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("PublishProduct: Invalid request body: %v", err)
 		c.JSON(http.StatusBadRequest, data.ResponseFailed(err.Error()))
 		return
 	}
 	ctx, err := createCtxWithUserID(c)
 	if err != nil {
-		log.Logger.Errorf("PublishProduct: Failed to create context with user ID: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("PublishProduct: Failed to create context with user ID: %v", err)
 		c.JSON(http.StatusUnauthorized, data.ResponseFailed("UserID needed from the context"))
 		return
 	}
@@ -122,7 +122,7 @@ func UpdateProductStatus(c *gin.Context) {
 	case service.ProductStatusUnderReview:
 		err := service.GetProductServiceInstance().ReviewSubmit(ctx, id)
 		if err != nil {
-			log.Logger.Errorf("UpdateProductStatus: Failed to publish product: %v", err)
+			log.WithContext(c.Request.Context()).Errorf("UpdateProductStatus: Failed to publish product: %v", err)
 			c.JSON(http.StatusOK, data.ResponseFailed(err.Error()))
 			return
 		}
@@ -130,13 +130,13 @@ func UpdateProductStatus(c *gin.Context) {
 	case service.ProductStatusUnpublished:
 		err := service.GetProductServiceInstance().UnpublishProduct(ctx, id)
 		if err != nil {
-			log.Logger.Errorf("UpdateProductStatus: Failed to unpublish product: %v", err)
+			log.WithContext(c.Request.Context()).Errorf("UpdateProductStatus: Failed to unpublish product: %v", err)
 			c.JSON(http.StatusOK, data.ResponseFailed(err.Error()))
 			return
 		}
 		c.JSON(http.StatusOK, data.ResponseSuccess("unpublish product success"))
 	default:
-		log.Logger.Errorf("UpdateProductStatus: Invalid product status: %d", req.Status)
+		log.WithContext(c.Request.Context()).Errorf("UpdateProductStatus: Invalid product status: %d", req.Status)
 		c.JSON(http.StatusBadRequest, data.ResponseFailed("Invalid product status"))
 	}
 }
@@ -158,19 +158,19 @@ func UpdateProductReviewResult(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		log.Logger.Errorf("GetProduct: Invalid product ID: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("GetProduct: Invalid product ID: %v", err)
 		c.JSON(http.StatusBadRequest, data.ResponseFailed("Invalid product ID"))
 		return
 	}
 	decision := c.Param("decision")
 	if decision != "approved" && decision != "rejected" {
-		log.Logger.Errorf("UpdateProductReviewResult: Invalid review status: %s", decision)
+		log.WithContext(c.Request.Context()).Errorf("UpdateProductReviewResult: Invalid review status: %s", decision)
 		c.JSON(http.StatusBadRequest, data.ResponseFailed("Invalid review status"))
 		return
 	}
 	ctx, err := createCtxWithUserID(c)
 	if err != nil {
-		log.Logger.Errorf("UpdateProductReviewResult: Failed to create context with user ID: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("UpdateProductReviewResult: Failed to create context with user ID: %v", err)
 		c.JSON(http.StatusUnauthorized, data.ResponseFailed("UserID needed from the context"))
 		return
 	}
@@ -181,7 +181,7 @@ func UpdateProductReviewResult(c *gin.Context) {
 		err = service.GetProductServiceInstance().ReviewReject(ctx, id)
 	}
 	if err != nil {
-		log.Logger.Errorf("UpdateProductReviewResult: Failed to update product review result: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("UpdateProductReviewResult: Failed to update product review result: %v", err)
 		c.JSON(http.StatusOK, data.ResponseFailed(err.Error()))
 		return
 	}
@@ -202,26 +202,26 @@ func UpdateProductStock(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		log.Logger.Errorf("GetProduct: Invalid product ID: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("GetProduct: Invalid product ID: %v", err)
 		c.JSON(http.StatusBadRequest, data.ResponseFailed("Invalid product ID"))
 		return
 	}
 
 	var req types.UpdateProductStockRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Logger.Errorf("UpdateProductStock: Invalid request body: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("UpdateProductStock: Invalid request body: %v", err)
 		c.JSON(http.StatusBadRequest, data.ResponseFailed(err.Error()))
 		return
 	}
 	ctx, err := createCtxWithUserID(c)
 	if err != nil {
-		log.Logger.Errorf("UpdateProductStock: Failed to create context with user ID: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("UpdateProductStock: Failed to create context with user ID: %v", err)
 		c.JSON(http.StatusUnauthorized, data.ResponseFailed("UserID needed from the context"))
 		return
 	}
 	err = service.GetProductServiceInstance().UpdateProductStock(ctx, id, req.Stock)
 	if err != nil {
-		log.Logger.Errorf("UpdateProductStock: Failed to update product stock: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("UpdateProductStock: Failed to update product stock: %v", err)
 		c.JSON(http.StatusOK, data.ResponseFailed(err.Error()))
 		return
 	}
@@ -256,7 +256,7 @@ func GetCustomerProductList(c *gin.Context) {
 	if offsetStr != "" {
 		offset, err := strconv.Atoi(offsetStr)
 		if err != nil {
-			log.Logger.Errorf("GetCustomerProductList: Invalid offset parameter: %v", err)
+			log.WithContext(c.Request.Context()).Errorf("GetCustomerProductList: Invalid offset parameter: %v", err)
 			c.JSON(http.StatusBadRequest, data.ResponseFailed("Invalid offset parameter"))
 			return
 		}
@@ -266,7 +266,7 @@ func GetCustomerProductList(c *gin.Context) {
 	// 处理order_by参数
 	orderBy, err := strconv.Atoi(orderByStr)
 	if err != nil || (orderBy != 0 && orderBy != 1) {
-		log.Logger.Errorf("GetCustomerProductList: Invalid order_by parameter: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("GetCustomerProductList: Invalid order_by parameter: %v", err)
 		c.JSON(http.StatusBadRequest, data.ResponseFailed("Invalid order_by parameter"))
 		return
 	}
@@ -285,7 +285,7 @@ func GetCustomerProductList(c *gin.Context) {
 	// 调用service层获取商品列表
 	productList, total, err := service.GetProductServiceInstance().GetProductList(c.Request.Context(), query)
 	if err != nil {
-		log.Logger.Errorf("GetCustomerProductList: Failed to get product list: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("GetCustomerProductList: Failed to get product list: %v", err)
 		c.JSON(http.StatusInternalServerError, data.ResponseFailed("Failed to get product list"))
 		return
 	}
@@ -324,7 +324,7 @@ func GetMerchantProductList(c *gin.Context) {
 	if offsetStr != "" {
 		offset, err := strconv.Atoi(offsetStr)
 		if err != nil {
-			log.Logger.Errorf("GetMerchantProductList: Invalid offset parameter: %v", err)
+			log.WithContext(c.Request.Context()).Errorf("GetMerchantProductList: Invalid offset parameter: %v", err)
 			c.JSON(http.StatusBadRequest, data.ResponseFailed("Invalid offset parameter"))
 			return
 		}
@@ -334,7 +334,7 @@ func GetMerchantProductList(c *gin.Context) {
 	// 处理order_by参数
 	orderBy, err := strconv.Atoi(orderByStr)
 	if err != nil || (orderBy != 0 && orderBy != 1) {
-		log.Logger.Errorf("GetMerchantProductList: Invalid order_by parameter: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("GetMerchantProductList: Invalid order_by parameter: %v", err)
 		c.JSON(http.StatusBadRequest, data.ResponseFailed("Invalid order_by parameter"))
 		return
 	}
@@ -353,7 +353,7 @@ func GetMerchantProductList(c *gin.Context) {
 	// 调用service层获取商品列表
 	productList, total, err := service.GetProductServiceInstance().GetProductList(c.Request.Context(), query)
 	if err != nil {
-		log.Logger.Errorf("GetMerchantProductList: Failed to get product list: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("GetMerchantProductList: Failed to get product list: %v", err)
 		c.JSON(http.StatusInternalServerError, data.ResponseFailed("Failed to get product list"))
 		return
 	}
@@ -381,14 +381,14 @@ func EditProductInfo(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		log.Logger.Errorf("GetProduct: Invalid product ID: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("GetProduct: Invalid product ID: %v", err)
 		c.JSON(http.StatusBadRequest, data.ResponseFailed("Invalid product ID"))
 		return
 	}
 
 	var req types.UpdateProductInfoRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Logger.Errorf("EditProductInfo: Invalid request body: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("EditProductInfo: Invalid request body: %v", err)
 		c.JSON(http.StatusBadRequest, data.ResponseFailed(err.Error()))
 		return
 	}
@@ -396,14 +396,14 @@ func EditProductInfo(c *gin.Context) {
 	req.ID = id
 	ctx, err := createCtxWithUserID(c)
 	if err != nil {
-		log.Logger.Errorf("EditProductInfo: Failed to create context with user ID: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("EditProductInfo: Failed to create context with user ID: %v", err)
 		c.JSON(http.StatusUnauthorized, data.ResponseFailed("UserID needed from the context"))
 		return
 	}
 	// 调用 service 层更新商品信息
 	err = service.GetProductServiceInstance().UpdateProductInfo(ctx, &req)
 	if err != nil {
-		log.Logger.Errorf("EditProductInfo: Failed to update product info: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("EditProductInfo: Failed to update product info: %v", err)
 		c.JSON(http.StatusInternalServerError, data.ResponseFailed("Failed to update product info"))
 		return
 	}
@@ -428,7 +428,7 @@ func GetProductCustomer(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		log.Logger.Errorf("GetProduct: Invalid product ID: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("GetProduct: Invalid product ID: %v", err)
 		c.JSON(http.StatusBadRequest, data.ResponseFailed("Invalid product ID"))
 		return
 	}
@@ -436,7 +436,7 @@ func GetProductCustomer(c *gin.Context) {
 	// 调用 service 层获取商品信息
 	product, err := service.GetProductServiceInstance().GetPublishedProductByID(c.Request.Context(), id)
 	if err != nil {
-		log.Logger.Errorf("GetProduct: Failed to get product details: %v", err)
+		log.WithContext(c.Request.Context()).Errorf("GetProduct: Failed to get product details: %v", err)
 		c.JSON(http.StatusInternalServerError, data.ResponseFailed("Failed to get product details"))
 		return
 	}
