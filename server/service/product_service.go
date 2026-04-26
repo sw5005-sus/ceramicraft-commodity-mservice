@@ -41,7 +41,7 @@ func (p *ProductServiceImpl) Create(ctx context.Context, product *types.ProductI
 	productModel.LatestEditorId = getUserId(ctx)
 	id, err := p.productDao.CreateProduct(ctx, productModel)
 	if err != nil {
-		log.Logger.Errorf("ProductService: Failed to create product: %v", err)
+		log.WithContext(ctx).Errorf("ProductService: Failed to create product: %v", err)
 		return -1, err
 	}
 	return id, nil
@@ -51,7 +51,7 @@ func (p *ProductServiceImpl) Create(ctx context.Context, product *types.ProductI
 func (p *ProductServiceImpl) GetProductByID(ctx context.Context, id int) (productInfo *types.ProductInfo, err error) {
 	product, err := p.productDao.GetProductByID(ctx, id)
 	if err != nil {
-		log.Logger.Errorf("ProductService: Failed to get product by ID: %v", err)
+		log.WithContext(ctx).Errorf("ProductService: Failed to get product by ID: %v", err)
 		return nil, err
 	}
 	if product == nil {
@@ -70,7 +70,7 @@ const (
 func (p *ProductServiceImpl) GetPublishedProductByID(ctx context.Context, id int) (productInfo *types.ProductInfo, err error) {
 	product, err := p.productDao.GetProductByID(ctx, id)
 	if err != nil {
-		log.Logger.Errorf("ProductService: Failed to get product by ID: %v", err)
+		log.WithContext(ctx).Errorf("ProductService: Failed to get product by ID: %v", err)
 		return nil, err
 	}
 	if product == nil || product.Status != ProductStatusPublished {
@@ -89,7 +89,7 @@ func (p *ProductServiceImpl) ReviewSubmit(ctx context.Context, id int) error {
 	if err != nil {
 		return err
 	}
-	log.Logger.Infof("Product (ID: %d) submitted for review successfully", id)
+	log.WithContext(ctx).Infof("Product (ID: %d) submitted for review successfully", id)
 	return nil
 }
 
@@ -112,7 +112,7 @@ func (p *ProductServiceImpl) PublishProduct(ctx context.Context, id int) (string
 	if err != nil {
 		return "", err
 	}
-	log.Logger.Infof("Product (ID: %d) published successfully", id)
+	log.WithContext(ctx).Infof("Product (ID: %d) published successfully", id)
 	return product.Name, nil
 }
 
@@ -133,7 +133,7 @@ func (p *ProductServiceImpl) ReviewReject(ctx context.Context, id int) error {
 		return err
 	}
 
-	log.Logger.Infof("Product (ID: %d) review rejected successfully", id)
+	log.WithContext(ctx).Infof("Product (ID: %d) review rejected successfully", id)
 	return nil
 }
 
@@ -149,7 +149,7 @@ func (p *ProductServiceImpl) UnpublishProduct(ctx context.Context, id int) (stri
 	if err != nil {
 		return "", err
 	}
-	log.Logger.Infof("Product (ID: %d) unpublished successfully", id)
+	log.WithContext(ctx).Infof("Product (ID: %d) unpublished successfully", id)
 	return product.Name, nil
 }
 
@@ -158,7 +158,7 @@ func (p *ProductServiceImpl) checkAndGetProduct(ctx context.Context, id int, exp
 	// 获取商品信息
 	product, err := p.productDao.GetProductByID(ctx, id)
 	if err != nil {
-		log.Logger.Errorf("Failed to get product by ID: %v", err)
+		log.WithContext(ctx).Errorf("Failed to get product by ID: %v", err)
 		return nil, err
 	}
 	if product == nil {
@@ -179,7 +179,7 @@ func (p *ProductServiceImpl) updateProductStatus(ctx context.Context, id int, pr
 	product.Status = int32(newStatus)
 	err := p.productDao.UpdateProductStatus(ctx, id, oldStatus, product)
 	if err != nil {
-		log.Logger.Errorf("Failed to update product status: %v", err)
+		log.WithContext(ctx).Errorf("Failed to update product status: %v", err)
 		return err
 	}
 	return nil
@@ -199,7 +199,7 @@ func (p *ProductServiceImpl) UpdateProductStock(ctx context.Context, id int, new
 	// 获取商品信息
 	product, err := p.productDao.GetProductByID(ctx, id)
 	if err != nil {
-		log.Logger.Errorf("UpdateProductStock: Failed to get product by ID: %v", err)
+		log.WithContext(ctx).Errorf("UpdateProductStock: Failed to get product by ID: %v", err)
 		return err
 	}
 	if product == nil {
@@ -214,7 +214,7 @@ func (p *ProductServiceImpl) UpdateProductStock(ctx context.Context, id int, new
 	// 更新库存
 	err = p.productDao.UpdateProductStock(ctx, id, newStock, getUserId(ctx))
 	if err != nil {
-		log.Logger.Errorf("UpdateProductStock: Failed to update stock: %v", err)
+		log.WithContext(ctx).Errorf("UpdateProductStock: Failed to update stock: %v", err)
 		return err
 	}
 
@@ -231,7 +231,7 @@ func (p *ProductServiceImpl) GetProductList(ctx context.Context, req types.GetPr
 		OrderBy:    req.OrderBy,
 	})
 	if err != nil {
-		log.Logger.Errorf("GetProductList: Failed to get product list, err: %v", err)
+		log.WithContext(ctx).Errorf("GetProductList: Failed to get product list, err: %v", err)
 		return nil, -1, err
 	}
 
@@ -255,19 +255,19 @@ func (p *ProductServiceImpl) GetProductList(ctx context.Context, req types.GetPr
 func (p *ProductServiceImpl) UpdateStockWithCAS(ctx context.Context, id, deta int) error {
 	pModel, err := p.productDao.GetProductByID(ctx, id)
 	if err != nil {
-		log.Logger.Errorf("UpdateStockWithCAS: get product failed, err: %s", err.Error())
+		log.WithContext(ctx).Errorf("UpdateStockWithCAS: get product failed, err: %s", err.Error())
 		return err
 	}
 
 	if int(pModel.Stock)+deta < 0 {
-		log.Logger.Errorf("UpdateStockWithCAS: do not have enough stock, product id: %d, current stock: %d", id, int(pModel.Stock))
+		log.WithContext(ctx).Errorf("UpdateStockWithCAS: do not have enough stock, product id: %d, current stock: %d", id, int(pModel.Stock))
 		return fmt.Errorf("do not have enough stock, product id: %d, current stock: %d", id, int(pModel.Stock))
 	}
 
 	newStock := int(pModel.Stock) + deta
 	err = p.productDao.UpdateStockWithCAS(ctx, id, int(pModel.Version), newStock, getUserId(ctx))
 	if err != nil {
-		log.Logger.Errorf("UpdateStockWithCAS: update failed, err:%s", err.Error())
+		log.WithContext(ctx).Errorf("UpdateStockWithCAS: update failed, err:%s", err.Error())
 		return err
 	}
 
@@ -282,7 +282,7 @@ func (p *ProductServiceImpl) UpdateProductInfo(ctx context.Context, req *types.U
 	// 获取商品信息
 	product, err := p.productDao.GetProductByID(ctx, req.ID)
 	if err != nil {
-		log.Logger.Errorf("UpdateProductInfo: Failed to get product by ID: %v", err)
+		log.WithContext(ctx).Errorf("UpdateProductInfo: Failed to get product by ID: %v", err)
 		return "", err
 	}
 	if product == nil {
@@ -316,7 +316,7 @@ func (p *ProductServiceImpl) UpdateProductInfo(ctx context.Context, req *types.U
 	// 调用DAO层更新商品信息
 	err = p.productDao.UpdateProduct(ctx, updatedProduct)
 	if err != nil {
-		log.Logger.Errorf("UpdateProductInfo: Failed to update product: %v", err)
+		log.WithContext(ctx).Errorf("UpdateProductInfo: Failed to update product: %v", err)
 		return "", err
 	}
 
@@ -326,7 +326,7 @@ func (p *ProductServiceImpl) UpdateProductInfo(ctx context.Context, req *types.U
 func getUserId(ctx context.Context) int {
 	userId, ok := ctx.Value(types.UserIDKey).(int)
 	if !ok {
-		log.Logger.Warn("getUserId: user_id not found in context or invalid type")
+		log.WithContext(ctx).Warn("getUserId: user_id not found in context or invalid type")
 		return 0
 	}
 	return userId

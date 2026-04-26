@@ -4,7 +4,9 @@ import (
 	"context"
 
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/common/productpb"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/log"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/service"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/types"
 )
 
 type ProductService struct {
@@ -14,13 +16,13 @@ type ProductService struct {
 func (p *ProductService) UpdateStockWithCAS(ctx context.Context, req *productpb.UpdateStockWithCASRequest) (*productpb.UpdateStockWithCASResponse, error) {
 	// execute
 	err := service.GetProductServiceInstance().UpdateStockWithCAS(ctx, int(req.Id), int(req.Deta))
-	
+
 	// failed
 	if err != nil {
 		return &productpb.UpdateStockWithCASResponse{
 			Base: &productpb.BaseResponse{
 				Code: int32(productpb.ResponseCode_INTERNAL_ERROR),
-				Msg: productpb.ResponseCode_name[int32(productpb.ResponseCode_INTERNAL_ERROR)],
+				Msg:  productpb.ResponseCode_name[int32(productpb.ResponseCode_INTERNAL_ERROR)],
 			},
 		}, err
 	}
@@ -29,7 +31,7 @@ func (p *ProductService) UpdateStockWithCAS(ctx context.Context, req *productpb.
 	return &productpb.UpdateStockWithCASResponse{
 		Base: &productpb.BaseResponse{
 			Code: int32(productpb.ResponseCode_SUCCESS),
-			Msg: productpb.ResponseCode_name[int32(productpb.ResponseCode_SUCCESS)],
+			Msg:  productpb.ResponseCode_name[int32(productpb.ResponseCode_SUCCESS)],
 		},
 	}, nil
 }
@@ -43,10 +45,10 @@ func (p *ProductService) GetProductList(ctx context.Context, req *productpb.GetP
 		}
 
 		productList = append(productList, &productpb.Product{
-			Id: id,
-			Name: productRaw.Name,
-			Stock: productRaw.Stock,
-			Price: productRaw.Price,
+			Id:     id,
+			Name:   productRaw.Name,
+			Stock:  productRaw.Stock,
+			Price:  productRaw.Price,
 			Status: productRaw.Status,
 		})
 	}
@@ -54,8 +56,56 @@ func (p *ProductService) GetProductList(ctx context.Context, req *productpb.GetP
 	return &productpb.GetProductListResponse{
 		Base: &productpb.BaseResponse{
 			Code: int32(productpb.ResponseCode_SUCCESS),
-			Msg: productpb.ResponseCode_name[int32(productpb.ResponseCode_SUCCESS)],
+			Msg:  productpb.ResponseCode_name[int32(productpb.ResponseCode_SUCCESS)],
 		},
 		Products: productList,
+	}, nil
+}
+
+func (p *ProductService) CreateProduct(ctx context.Context, req *productpb.CreateProductRequest) (*productpb.CreateProductResponse, error) {
+	productInfo := &types.ProductInfo{
+		Name:             req.Name,
+		Stock:            req.Stock,
+		Price:            req.Price,
+		Category:         req.Category,
+		Desc:             req.Desc,
+		PicInfo:          req.PicInfo,
+		Dimensions:       req.Dimensions,
+		Material:         req.Material,
+		Weight:           req.Weight,
+		Capacity:         req.Capacity,
+		CareInstructions: req.CareInstructions,
+	}
+	valueCtx := context.WithValue(ctx, types.UserIDKey, int(req.LatestEditorId))
+	id, err := service.GetProductServiceInstance().Create(valueCtx, productInfo)
+	if err != nil {
+		log.WithContext(ctx).Errorf("failed to create product, err: %v", err)
+		return &productpb.CreateProductResponse{
+			Base: &productpb.BaseResponse{
+				Code: int32(productpb.ResponseCode_INTERNAL_ERROR),
+				Msg:  productpb.ResponseCode_name[int32(productpb.ResponseCode_INTERNAL_ERROR)],
+			},
+		}, err
+	}
+	log.WithContext(ctx).Infof("successfully created product, id: %d", id)
+
+	return &productpb.CreateProductResponse{
+		Base: &productpb.BaseResponse{
+			Code: int32(productpb.ResponseCode_SUCCESS),
+			Msg:  productpb.ResponseCode_name[int32(productpb.ResponseCode_SUCCESS)],
+		},
+		Id:               int64(id),
+		Name:             req.Name,
+		Stock:            req.Stock,
+		Price:            req.Price,
+		Category:         req.Category,
+		Desc:             req.Desc,
+		PicInfo:          req.PicInfo,
+		Dimensions:       req.Dimensions,
+		Material:         req.Material,
+		Weight:           req.Weight,
+		Capacity:         req.Capacity,
+		CareInstructions: req.CareInstructions,
+		LatestEditorId:   req.LatestEditorId,
 	}, nil
 }

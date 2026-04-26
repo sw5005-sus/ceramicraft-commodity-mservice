@@ -62,7 +62,7 @@ func (c *CartServiceImpl) AddItem(ctx context.Context, item *data.CartItemBasicV
 		ProductID: item.ProductID,
 	})
 	if err != nil {
-		log.Logger.Errorf("CartService: AddItem: Failed to query existing items: %v", err)
+		log.WithContext(ctx).Errorf("CartService: AddItem: Failed to query existing items: %v", err)
 		return types.NewBizError(ProductCheckStatus_DBError, fmt.Sprintf("database error: %v", err))
 	}
 	if len(existingItems) > 0 {
@@ -73,7 +73,7 @@ func (c *CartServiceImpl) AddItem(ctx context.Context, item *data.CartItemBasicV
 	}
 	bizErr := c.checkProductWithItem(ctx, item)
 	if bizErr != nil {
-		log.Logger.Errorf("CartService: AddItem: Failed to check product with item: %v", err)
+		log.WithContext(ctx).Errorf("CartService: AddItem: Failed to check product with item: %v", err)
 		return bizErr
 	}
 	itemId, err := c.cartItemDao.CreateItem(ctx, &model.ShoppingCartItem{
@@ -85,11 +85,11 @@ func (c *CartServiceImpl) AddItem(ctx context.Context, item *data.CartItemBasicV
 		UpdatedAt:    time.Now(),
 	})
 	if err != nil {
-		log.Logger.Errorf("CartService: AddItem: Failed to create cart item: %v", err)
+		log.WithContext(ctx).Errorf("CartService: AddItem: Failed to create cart item: %v", err)
 		return types.NewBizError(ProductCheckStatus_DBError, fmt.Sprintf("database error: %v", err))
 	}
 	item.ID = itemId
-	log.Logger.Infof("CartService: AddItem: Added item with ID %d to cart", itemId)
+	log.WithContext(ctx).Infof("CartService: AddItem: Added item with ID %d to cart", itemId)
 	return nil
 }
 
@@ -97,25 +97,25 @@ func (c *CartServiceImpl) AddItem(ctx context.Context, item *data.CartItemBasicV
 func (c *CartServiceImpl) DeleteItem(ctx context.Context, itemId int, userId int) error {
 	err := c.cartItemDao.DeleteItemById(ctx, itemId, userId)
 	if err != nil {
-		log.Logger.Errorf("CartService: DeleteItem: Failed to delete cart item: %v", err)
+		log.WithContext(ctx).Errorf("CartService: DeleteItem: Failed to delete cart item: %v", err)
 		return err
 	}
-	log.Logger.Infof("CartService: DeleteItem: Deleted item with ID %d from cart", itemId)
+	log.WithContext(ctx).Infof("CartService: DeleteItem: Deleted item with ID %d from cart", itemId)
 	return nil
 }
 
 // DeleteItemByProductIds implements CartService.
 func (c *CartServiceImpl) DeleteItemByProductIds(ctx context.Context, userId int, productIds []int) error {
 	if len(productIds) == 0 {
-		log.Logger.Warnf("CartService: DeleteItemByProductIds: No product IDs provided for deletion")
+		log.WithContext(ctx).Warnf("CartService: DeleteItemByProductIds: No product IDs provided for deletion")
 		return nil
 	}
 	err := c.cartItemDao.DeleteByProductIds(ctx, userId, productIds)
 	if err != nil {
-		log.Logger.Errorf("CartService: DeleteItemByProductIds: Failed to delete cart items: %v", err)
+		log.WithContext(ctx).Errorf("CartService: DeleteItemByProductIds: Failed to delete cart items: %v", err)
 		return err
 	}
-	log.Logger.Infof("CartService: DeleteItemByProductIds: Deleted items with product IDs %v from cart", productIds)
+	log.WithContext(ctx).Infof("CartService: DeleteItemByProductIds: Deleted items with product IDs %v from cart", productIds)
 	return nil
 }
 
@@ -125,11 +125,11 @@ func (c *CartServiceImpl) GetCartItems(ctx context.Context, userId int) (*data.C
 		UserID: userId,
 	})
 	if err != nil {
-		log.Logger.Errorf("CartService: GetCartItems: Failed to query cart items: %v", err)
+		log.WithContext(ctx).Errorf("CartService: GetCartItems: Failed to query cart items: %v", err)
 		return nil, err
 	}
 	if len(items) == 0 {
-		log.Logger.Infof("CartService: GetCartItems: No items found for user ID %d", userId)
+		log.WithContext(ctx).Infof("CartService: GetCartItems: No items found for user ID %d", userId)
 		return &data.CartListVO{
 			CartItems: []data.CartItemDetailVO{},
 		}, nil
@@ -142,7 +142,7 @@ func (c *CartServiceImpl) GetCartItems(ctx context.Context, userId int) (*data.C
 	}
 	products, err := c.productDao.GetProductByIDs(ctx, productIds)
 	if err != nil {
-		log.Logger.Errorf("CartService: GetCartItems: Failed to get products by IDs: %v", err)
+		log.WithContext(ctx).Errorf("CartService: GetCartItems: Failed to get products by IDs: %v", err)
 		return nil, err
 	}
 	ret := &data.CartListVO{
@@ -166,7 +166,7 @@ func (c *CartServiceImpl) GetCartItems(ctx context.Context, userId int) (*data.C
 	if len(toDeleteProductIds) > 0 {
 		go func() {
 			err := c.cartItemDao.DeleteByProductIds(context.Background(), userId, toDeleteProductIds)
-			log.Logger.Infof("CartService: GetCartItems: Deleted cart items with invalid products for user ID %d, err: %v", userId, err)
+			log.WithContext(ctx).Infof("CartService: GetCartItems: Deleted cart items with invalid products for user ID %d, err: %v", userId, err)
 		}()
 	}
 	sort.Slice(ret.CartItems, func(i, j int) bool {
@@ -201,7 +201,7 @@ func buildCartItemDetail(product *model.Product, item *model.ShoppingCartItem) d
 func (c *CartServiceImpl) GetCartSelectedItemCnt(ctx context.Context, userId int) (int, error) {
 	items, err := c.cartItemDao.QueryItems(ctx, &model.ShoppingCartItem{UserID: userId})
 	if err != nil {
-		log.Logger.Errorf("CartService: GetCartSelectedItemCnt: Failed to query cart items: %v", err)
+		log.WithContext(ctx).Errorf("CartService: GetCartSelectedItemCnt: Failed to query cart items: %v", err)
 		return 0, err
 	}
 	ret := 0
@@ -217,11 +217,11 @@ func (c *CartServiceImpl) GetCartSelectedItemCnt(ctx context.Context, userId int
 func (c *CartServiceImpl) UpdateItem(ctx context.Context, item *data.CartItemBasicVO) *types.BizError {
 	existingItems, err := c.cartItemDao.GetItemById(ctx, item.ID)
 	if err != nil {
-		log.Logger.Errorf("CartService: UpdateItem: Failed to get item by ID: %v", err)
+		log.WithContext(ctx).Errorf("CartService: UpdateItem: Failed to get item by ID: %v", err)
 		return types.NewBizError(ProductCheckStatus_DBError, fmt.Sprintf("database error: %v", err))
 	}
 	if existingItems == nil || existingItems.UserID != item.UserID {
-		log.Logger.Errorf("CartService: UpdateItem: Item not found or does not belong to user")
+		log.WithContext(ctx).Errorf("CartService: UpdateItem: Item not found or does not belong to user")
 		return types.NewBizError(CartItemStatus_NotExist, "cart item not found or does not belong to user")
 	}
 	bizErr := c.checkProductWithItem(ctx, item)
@@ -237,10 +237,10 @@ func (c *CartServiceImpl) UpdateItem(ctx context.Context, item *data.CartItemBas
 	existingItems.UpdatedAt = time.Now()
 	err = c.cartItemDao.UpdateItem(ctx, existingItems)
 	if err != nil {
-		log.Logger.Errorf("CartService: UpdateItem: Failed to update cart item: %v", err)
+		log.WithContext(ctx).Errorf("CartService: UpdateItem: Failed to update cart item: %v", err)
 		return types.NewBizError(ProductCheckStatus_DBError, fmt.Sprintf("database error: %v", err))
 	}
-	log.Logger.Infof("CartService: UpdateItem: Updated item with ID %d in cart", item.ID)
+	log.WithContext(ctx).Infof("CartService: UpdateItem: Updated item with ID %d in cart", item.ID)
 	return nil
 }
 
@@ -250,7 +250,7 @@ func (c *CartServiceImpl) checkProductWithItem(ctx context.Context, item *data.C
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return types.NewBizError(ProductCheckStatus_NotExist, fmt.Sprintf("product not found with ID: %d", item.ProductID))
 		}
-		log.Logger.Errorf("CartService: UpdateItem: Failed to get product by ID: %v", err)
+		log.WithContext(ctx).Errorf("CartService: UpdateItem: Failed to get product by ID: %v", err)
 		return types.NewBizError(ProductCheckStatus_DBError, fmt.Sprintf("database error: %v", err))
 	}
 	if product == nil || product.Status != ProductStatu_Online {
@@ -268,12 +268,12 @@ func (c *CartServiceImpl) EstimatePrice(ctx context.Context, userId int) (*data.
 		SelectStatus: model.CartItemStatusSelected,
 	})
 	if err != nil {
-		log.Logger.Errorf("CartService: EstimatePrice: Failed to query cart items: %v", err)
+		log.WithContext(ctx).Errorf("CartService: EstimatePrice: Failed to query cart items: %v", err)
 		return nil, err
 	}
 	ret := &data.CartPriceEstimateResult{}
 	if len(items) == 0 {
-		log.Logger.Infof("CartService: EstimatePrice: No items found for user ID %d", userId)
+		log.WithContext(ctx).Infof("CartService: EstimatePrice: No items found for user ID %d", userId)
 		return ret, nil
 	}
 	productIds := make([]int, 0, len(items))
@@ -284,7 +284,7 @@ func (c *CartServiceImpl) EstimatePrice(ctx context.Context, userId int) (*data.
 	}
 	products, err := c.productDao.GetProductByIDs(ctx, productIds)
 	if err != nil {
-		log.Logger.Errorf("CartService: EstimatePrice: Failed to get products by IDs: %v", err)
+		log.WithContext(ctx).Errorf("CartService: EstimatePrice: Failed to get products by IDs: %v", err)
 		return nil, err
 	}
 	for _, product := range products {
@@ -305,7 +305,7 @@ func (c *CartServiceImpl) EstimatePrice(ctx context.Context, userId int) (*data.
 
 const (
 	freeShipPrice = 30000 // $300.00 in cents
-	shipPrice     = 800    // $8.00 in cents
+	shipPrice     = 800   // $8.00 in cents
 )
 
 func getTaxPrice(productPrice int) int {
