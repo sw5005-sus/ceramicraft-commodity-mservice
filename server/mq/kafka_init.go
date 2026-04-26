@@ -16,8 +16,13 @@ const (
 )
 
 func Init() {
+	InitProducer()
 	startKafkaConsumer(topicOrderCreated, clearCartProcess)
 	log.Logger.Infof("Kafka consumer for topic %s started", topicOrderCreated)
+}
+
+func Close() {
+	CloseProducer()
 }
 
 func startKafkaConsumer(topic string, processor KafkaMsgProcessor) {

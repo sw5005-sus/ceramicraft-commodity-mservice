@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/http/data"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/log"
+	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/mq"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/service"
 	"github.com/sw5005-sus/ceramicraft-commodity-mservice/server/types"
 )
@@ -128,11 +129,18 @@ func UpdateProductStatus(c *gin.Context) {
 		}
 		c.JSON(http.StatusOK, data.ResponseSuccess("submit product review success"))
 	case service.ProductStatusUnpublished:
-		err := service.GetProductServiceInstance().UnpublishProduct(ctx, id)
+		productName, err := service.GetProductServiceInstance().UnpublishProduct(ctx, id)
 		if err != nil {
 			log.WithContext(c.Request.Context()).Errorf("UpdateProductStatus: Failed to unpublish product: %v", err)
 			c.JSON(http.StatusOK, data.ResponseFailed(err.Error()))
 			return
+		}
+		if productName != "" {
+			go func() {
+				if err := mq.GetProducer().PublishProductChanged(context.Background(), productName, "delete"); err != nil {
+					log.Logger.Errorf("Failed to publish product_changed event for product %d: %v", id, err)
+				}
+			}()
 		}
 		c.JSON(http.StatusOK, data.ResponseSuccess("unpublish product success"))
 	default:
@@ -174,9 +182,10 @@ func UpdateProductReviewResult(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, data.ResponseFailed("UserID needed from the context"))
 		return
 	}
+	var productName string
 	switch decision {
 	case "approved":
-		err = service.GetProductServiceInstance().PublishProduct(ctx, id)
+		productName, err = service.GetProductServiceInstance().PublishProduct(ctx, id)
 	case "rejected":
 		err = service.GetProductServiceInstance().ReviewReject(ctx, id)
 	}
@@ -184,6 +193,13 @@ func UpdateProductReviewResult(c *gin.Context) {
 		log.WithContext(c.Request.Context()).Errorf("UpdateProductReviewResult: Failed to update product review result: %v", err)
 		c.JSON(http.StatusOK, data.ResponseFailed(err.Error()))
 		return
+	}
+	if decision == "approved" && productName != "" {
+		go func() {
+			if err := mq.GetProducer().PublishProductChanged(context.Background(), productName, "upload"); err != nil {
+				log.Logger.Errorf("Failed to publish product_changed event for product %d: %v", id, err)
+			}
+		}()
 	}
 	c.JSON(http.StatusOK, data.ResponseSuccess("update product review result success"))
 }
@@ -401,11 +417,18 @@ func EditProductInfo(c *gin.Context) {
 		return
 	}
 	// 调用 service 层更新商品信息
-	err = service.GetProductServiceInstance().UpdateProductInfo(ctx, &req)
+	productName, err := service.GetProductServiceInstance().UpdateProductInfo(ctx, &req)
 	if err != nil {
 		log.WithContext(c.Request.Context()).Errorf("EditProductInfo: Failed to update product info: %v", err)
 		c.JSON(http.StatusInternalServerError, data.ResponseFailed("Failed to update product info"))
 		return
+	}
+	if productName != "" {
+		go func() {
+			if err := mq.GetProducer().PublishProductChanged(context.Background(), productName, "update"); err != nil {
+				log.Logger.Errorf("Failed to publish product_changed event for product %d: %v", id, err)
+			}
+		}()
 	}
 
 	c.JSON(http.StatusOK, data.ResponseSuccess(nil))

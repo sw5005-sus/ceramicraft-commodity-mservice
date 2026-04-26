@@ -33,6 +33,7 @@ func main() {
 	defer shutdownTrace()
 	shutdownMetrics := telemetry.InitMetrics()
 	defer shutdownMetrics()
+	defer mq.Close()
 	go grpc.Init(sigCh)
 	go http.Init(sigCh)
 	// listen terminage signal

@@ -166,7 +166,7 @@ func TestProductServiceImpl_PublishProduct(t *testing.T) {
 		productDao: m,
 	}
 
-	err := testProductServiceImpl.PublishProduct(ctx, 1)
+	_, err := testProductServiceImpl.PublishProduct(ctx, 1)
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
@@ -187,20 +187,20 @@ func TestProductServiceImpl_PublishProduct(t *testing.T) {
 	}
 	m.EXPECT().GetProductByID(ctx, 2).Return(p, nil)
 
-	err = testProductServiceImpl.PublishProduct(ctx, 2)
+	_, err = testProductServiceImpl.PublishProduct(ctx, 2)
 	if err == nil {
 		t.Errorf("Expected error when publishing an already published product, got nil")
 	}
 
 	m.EXPECT().GetProductByID(ctx, 3).Return(nil, errors.New("product not found"))
 
-	err = testProductServiceImpl.PublishProduct(ctx, 3)
+	_, err = testProductServiceImpl.PublishProduct(ctx, 3)
 	if err == nil {
 		t.Errorf("Expected error, got nil")
 	}
 
 	m.EXPECT().GetProductByID(ctx, 4).Return(nil, nil)
-	err = testProductServiceImpl.PublishProduct(ctx, 4)
+	_, err = testProductServiceImpl.PublishProduct(ctx, 4)
 	if err == nil {
 		t.Errorf("Expected error, got nil")
 	}
@@ -221,7 +221,7 @@ func TestProductServiceImpl_PublishProduct(t *testing.T) {
 	m.EXPECT().GetProductByID(ctx, 5).Return(p, nil)
 
 	m.EXPECT().UpdateProductStatus(ctx, 5, ProductStatusUnderReview, p).Return(errors.New("database error"))
-	err = testProductServiceImpl.PublishProduct(ctx, 5)
+	_, err = testProductServiceImpl.PublishProduct(ctx, 5)
 	if err == nil {
 		t.Errorf("Expected error, got nil")
 	}
@@ -229,7 +229,7 @@ func TestProductServiceImpl_PublishProduct(t *testing.T) {
 	// editor and reviwer should not be the same person
 	p.LatestEditorId = 1
 	m.EXPECT().GetProductByID(ctx, 6).Return(p, nil)
-	err = testProductServiceImpl.PublishProduct(ctx, 6)
+	_, err = testProductServiceImpl.PublishProduct(ctx, 6)
 	if err == nil {
 		t.Errorf("Expected error when editor and reviewer are the same, got nil")
 	}
@@ -261,7 +261,7 @@ func TestProductServiceImpl_UnpublishProduct(t *testing.T) {
 		productDao: m,
 	}
 
-	err := testProductServiceImpl.UnpublishProduct(ctx, 1)
+	_, err := testProductServiceImpl.UnpublishProduct(ctx, 1)
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
@@ -281,20 +281,20 @@ func TestProductServiceImpl_UnpublishProduct(t *testing.T) {
 		CareInstructions: "Handle with care",
 	}, nil)
 
-	err = testProductServiceImpl.UnpublishProduct(ctx, 2)
+	_, err = testProductServiceImpl.UnpublishProduct(ctx, 2)
 	if err == nil {
 		t.Errorf("Expected error when unpublishing an already unpublished product, got nil")
 	}
 
 	m.EXPECT().GetProductByID(ctx, 3).Return(nil, errors.New("product not found"))
 
-	err = testProductServiceImpl.UnpublishProduct(ctx, 3)
+	_, err = testProductServiceImpl.UnpublishProduct(ctx, 3)
 	if err == nil {
 		t.Errorf("Expected error, got nil")
 	}
 
 	m.EXPECT().GetProductByID(ctx, 4).Return(nil, nil)
-	err = testProductServiceImpl.UnpublishProduct(ctx, 4)
+	_, err = testProductServiceImpl.UnpublishProduct(ctx, 4)
 	if err == nil {
 		t.Errorf("Expected error, got nil")
 	}
@@ -316,7 +316,7 @@ func TestProductServiceImpl_UnpublishProduct(t *testing.T) {
 
 	m.EXPECT().UpdateProductStatus(ctx, 5, ProductStatusPublished, p).Return(errors.New("database error"))
 
-	err = testProductServiceImpl.UnpublishProduct(ctx, 5)
+	_, err = testProductServiceImpl.UnpublishProduct(ctx, 5)
 	if err == nil {
 		t.Errorf("Expected database error, got nil")
 	}
@@ -768,7 +768,7 @@ func TestProductServiceImpl_UpdateProductInfo(t *testing.T) {
 	m.EXPECT().GetProductByID(ctx, 1).Return(existingProduct, nil)
 	m.EXPECT().UpdateProduct(ctx, expectedUpdatedProduct).Return(nil)
 
-	err := testProductServiceImpl.UpdateProductInfo(ctx, updateRequest)
+	_, err := testProductServiceImpl.UpdateProductInfo(ctx, updateRequest)
 	if err != nil {
 		t.Errorf("Expected no error when updating product info, got %v", err)
 	}
@@ -781,7 +781,7 @@ func TestProductServiceImpl_UpdateProductInfo(t *testing.T) {
 		Name: "Test Product",
 	}
 
-	err = testProductServiceImpl.UpdateProductInfo(ctx, updateRequest2)
+	_, err = testProductServiceImpl.UpdateProductInfo(ctx, updateRequest2)
 	if err == nil {
 		t.Error("Expected error when product not found, got nil")
 	}
@@ -794,7 +794,7 @@ func TestProductServiceImpl_UpdateProductInfo(t *testing.T) {
 		Name: "Test Product",
 	}
 
-	err = testProductServiceImpl.UpdateProductInfo(ctx, updateRequest3)
+	_, err = testProductServiceImpl.UpdateProductInfo(ctx, updateRequest3)
 	if err == nil {
 		t.Error("Expected error when product is nil, got nil")
 	}
@@ -815,7 +815,7 @@ func TestProductServiceImpl_UpdateProductInfo(t *testing.T) {
 		Name: "Updated Name",
 	}
 
-	err = testProductServiceImpl.UpdateProductInfo(ctx, updateRequest4)
+	_, err = testProductServiceImpl.UpdateProductInfo(ctx, updateRequest4)
 	if err == nil {
 		t.Error("Expected error when updating published product, got nil")
 	}
@@ -857,7 +857,7 @@ func TestProductServiceImpl_UpdateProductInfo(t *testing.T) {
 	m.EXPECT().GetProductByID(ctx, 5).Return(unpublishedProduct, nil)
 	m.EXPECT().UpdateProduct(ctx, expectedUpdatedProduct5).Return(errors.New("database error"))
 
-	err = testProductServiceImpl.UpdateProductInfo(ctx, updateRequest5)
+	_, err = testProductServiceImpl.UpdateProductInfo(ctx, updateRequest5)
 	if err == nil {
 		t.Error("Expected error when DAO update fails, got nil")
 	}
